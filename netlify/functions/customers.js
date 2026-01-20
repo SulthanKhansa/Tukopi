@@ -24,6 +24,21 @@ exports.handler = async (event, context) => {
     await client.connect();
 
     if (event.httpMethod === 'GET') {
+      // GET ALL CUSTOMERS (Admin)
+      if (!id || id === 'customers') {
+        const res = await client.query(`
+          SELECT 
+            "CUST_ID" AS "CUST_ID", 
+            "CUST_NAME" AS "CUST_NAME", 
+            "EMAIL" AS "EMAIL", 
+            "CONTACT_NUMBER" AS "CONTACT_NUMBER",
+            "ADDRESS" AS "ADDRESS"
+          FROM "customers"
+          ORDER BY "CUST_NAME" ASC
+        `);
+        return { statusCode: 200, headers, body: JSON.stringify({ data: res.rows }) };
+      }
+
       if (isOrdersRequest) {
         // Get customer orders
         const custId = event.path.split('/')[event.path.split('/').length - 2];

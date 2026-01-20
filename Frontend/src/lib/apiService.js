@@ -50,22 +50,47 @@ export const apiService = {
 
   // Admin Dashboard API
   async getAdminDashboard() {
+    if (isProduction) {
+      const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/orders/stats`);
+      const json = await resp.json();
+      return json.data || { total_orders: 0, total_revenue: 0 };
+    }
     return await this.fetchAdmin("/orders/dashboard/stats");
   },
 
   async getAdminOrders() {
+    if (isProduction) {
+      const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/orders`);
+      const json = await resp.json();
+      return json.data || [];
+    }
     return (await this.fetchAdmin("/orders")) || [];
   },
 
   async getAdminCashiers() {
+    if (isProduction) {
+      const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/cashiers`);
+      const json = await resp.json();
+      return json.data || [];
+    }
     return (await this.fetchAdmin("/cashiers")) || [];
   },
 
   async getAdminCustomers() {
+    if (isProduction) {
+      const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/customers`);
+      const json = await resp.json();
+      return json.data || [];
+    }
     return (await this.fetchAdmin("/customers")) || [];
   },
 
   async getAdminProducts() {
+    if (isProduction) {
+      const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/products`);
+      const json = await resp.json();
+      return json.data || [];
+    }
     return (await this.fetchAdmin("/products")) || [];
   },
 
@@ -82,6 +107,11 @@ export const apiService = {
   },
 
   async getCategories() {
+    if (isProduction) {
+      const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/categories`);
+      const json = await resp.json();
+      return json.data || [];
+    }
     return (await this.fetchAdmin("/categories")) || [];
   },
 
@@ -96,7 +126,14 @@ export const apiService = {
   },
 
   async getProductById(id) {
+    if (isProduction) {
+      // For now we don't have a specific getProductById function, 
+      // but we can filter from getAdminProducts or just keep it simple
+      const products = await this.getAdminProducts();
+      return products.find(p => p.PRODUCT_ID === id) || null;
+    }
     return await this.fetchAdmin(`/products/${id}`);
+  },
   },
 
   async getCustomerOrders(id) {

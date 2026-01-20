@@ -9,14 +9,10 @@ exports.handler = async (event, context) => {
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "POST, OPTIONS"
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
       },
       body: ''
     };
-  }
-
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
   const client = new Client({
@@ -25,7 +21,54 @@ exports.handler = async (event, context) => {
   });
 
   try {
-    const { orderDate, custId, userId, methodId, total, items } = JSON.parse(event.body);
+    await client.connect();
+
+    // GET ALL ORDERS OR STATS (For Admin)
+    if (event.httpMethod === 'GET') {
+      const isStats = event.path.endsWith('/stats');
+
+      if (isStats) {
+        const statsRes = await client.query(`
+          SELECT 
+            COUNT(*) as total_orders, 
+            COALESCE(SUM("TOTAL"), 0) as total_revenue,
+            (SELECT COUNT(*) FROM "customers") as total_customers,
+            (SELECT COUNT(*) FROM "products") as total_products
+          FROM "orders"
+        `);
+        return {
+          statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ data: statsRes.rows[0] })
+        };
+      }
+
+      const res = await client.query(`
+        SELECT 
+          o."ORDER_ID" AS id, 
+          o."ORDER_DATE" AS tanggal, 
+          c."CUST_NAME" AS pelanggan, 
+          ca."USERNAME" AS kasir, 
+          o."TOTAL" AS total, 
+          m."METHOD" AS metode_pembayaran,
+          o."BANK_TRANS" AS bank,
+          o."RECEIPT_NUMBER" AS nomor_nota
+        FROM "orders" o
+        LEFT JOIN "customers" c ON o."CUST_ID" = c."CUST_ID"
+        LEFT JOIN "cashiers" ca ON o."USER_ID" = ca."USER_ID"
+        LEFT JOIN "payment_methods" m ON o."METHOD_ID" = m."METHOD_ID"
+        ORDER BY o."ORDER_DATE" DESC
+      `);
+      return {
+        statusCode: 200,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ data: res.rows })
+      };
+    }
+
+    // CREATE NEW ORDER
+    if (event.httpMethod === 'POST') {
+      const { orderDate, custId, userId, methodId, total, items } = JSON.parse(event.body);
     await client.connect();
 
     // Start Transaction
