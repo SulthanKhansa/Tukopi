@@ -25,31 +25,8 @@ const getProductImage = (name: string) => {
   <section class="checkout-section">
     <div class="checkout-container">
       <div class="checkout-left">
-        <div class="products-list">
-          {products.map((p: any) => (
-            <div class="product-card">
-              <div class="product-image">
-                <img src={getProductImage(p.PRODUCT_NAME)} alt={p.PRODUCT_NAME} />
-              </div>
-              <div class="product-info">
-                <h3>{p.CATEGORY || 'Produk'}</h3>
-                <p class="product-name">{p.PRODUCT_NAME}</p>
-                <p class="product-price">
-                  {new Intl.NumberFormat('id-ID', {
-                    style: 'currency',
-                    currency: 'IDR',
-                    minimumFractionDigits: 0
-                  }).format(p.PRICE)}
-                </p>
-              </div>
-              <div class="product-controls">
-                <button class="btn-minus" data-product-id={p.PRODUCT_ID} aria-label="Kurangi"><i data-feather="minus"></i></button>
-                <span class="quantity">0</span>
-                <button class="btn-plus" data-product-id={p.PRODUCT_ID} aria-label="Tambah"><i data-feather="plus"></i></button>
-              </div>
-            </div>
-          ))}
-          {products.length === 0 && <p>Memuat produk...</p>}
+        <div class="products-list" id="products-list">
+          {products.length === 0 && <p id="loading-text">Memuat produk...</p>}
         </div>
       </div>
 
@@ -107,19 +84,81 @@ const getProductImage = (name: string) => {
   </div>
 </Layout>
 
-<script is:inline define:vars={{ initialProducts: products }}>
-  // Map array produk dari server ke object keyed by ID untuk akses cepat di klien
-  const dbProducts = {};
-  initialProducts.forEach(p => {
-    dbProducts[p.PRODUCT_ID] = {
-      id: p.PRODUCT_ID,
-      name: p.PRODUCT_NAME,
-      price: parseFloat(p.PRICE),
-      brand: p.CATEGORY === 'KOPI' ? 'Kopi Tetangga' : 'Tuko di Rumah'
-    };
-  });
+<script is:inline>
+  // Helper gambar versi client-side
+  const getProductImage = (name) => {
+    const n = name.toLowerCase();
+    if (n.includes('susu') && n.includes('1l')) return '/kopi susu 1l.png';
+    if (n.includes('hitam') && n.includes('1l')) return '/kopi hitam 1l.png';
+    if (n.includes('susu') && n.includes('500ml')) return '/kopi susu 500ml.png';
+    if (n.includes('remon')) return '/teh remon.png';
+    if ((n.includes('cokelat') || n.includes('chocolate')) && !n.includes('jeruk')) return '/chocolate.png';
+    if (n.includes('kelapa') || n.includes('jeruk')) return '/kelapa jeruk.png';
+    return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII='; 
+  };
 
+  let dbProducts = {};
   let cart = {};
+
+  function renderProducts(products) {
+    const list = document.getElementById('products-list');
+    if (!list) return;
+    
+    list.innerHTML = products.map(p => `
+      <div class="product-card">
+        <div class="product-image">
+          <img src="${getProductImage(p.PRODUCT_NAME)}" alt="${p.PRODUCT_NAME}" />
+        </div>
+        <div class="product-info">
+          <h3>${p.CATEGORY || 'Produk'}</h3>
+          <p class="product-name">${p.PRODUCT_NAME}</p>
+          <p class="product-price">
+            ${new Intl.NumberFormat('id-ID', {
+              style: 'currency',
+              currency: 'IDR',
+              minimumFractionDigits: 0
+            }).format(p.PRICE)}
+          </p>
+        </div>
+        <div class="product-controls">
+          <button class="btn-minus" data-product-id="${p.PRODUCT_ID}"><i data-feather="minus"></i></button>
+          <span class="quantity" id="qty-${p.PRODUCT_ID}">${cart[p.PRODUCT_ID] || 0}</span>
+          <button class="btn-plus" data-product-id="${p.PRODUCT_ID}"><i data-feather="plus"></i></button>
+        </div>
+      </div>
+    `).join('');
+
+    // Re-replace feather icons
+    if (window.feather) window.feather.replace();
+  }
+
+  async function loadProducts() {
+    try {
+      const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      const url = isProduction ? "/.netlify/functions/products" : "http://127.0.0.1:5000/api/products";
+      
+      const response = await fetch(url);
+      const result = await response.json();
+      
+      const products = result.data || [];
+      
+      products.forEach(p => {
+        dbProducts[p.PRODUCT_ID] = {
+          id: p.PRODUCT_ID,
+          name: p.PRODUCT_NAME,
+          price: parseFloat(p.PRICE),
+          brand: p.CATEGORY || 'Produk'
+        };
+      });
+
+      renderProducts(products);
+      updateCart();
+    } catch (err) {
+      console.error("Load error:", err);
+      const loadingText = document.getElementById('loading-text');
+      if (loadingText) loadingText.textContent = "Gagal memuat produk.";
+    }
+  }
 
   function updateCart() {
     const cartItemsDiv = document.getElementById('cart-items');
@@ -129,12 +168,11 @@ const getProductImage = (name: string) => {
     let total = 0;
 
     Object.entries(cart).forEach(([productId, quantity]) => {
-      const qty = quantity;
-      if (qty > 0) {
+      if (quantity > 0) {
         const product = dbProducts[productId];
         if (!product) return;
         
-        const itemTotal = product.price * qty;
+        const itemTotal = product.price * quantity;
         total += itemTotal;
 
         const cartItem = document.createElement('div');
@@ -142,7 +180,7 @@ const getProductImage = (name: string) => {
         cartItem.innerHTML = `
           <div class="cart-item-info">
             <p class="cart-item-brand">${product.brand}</p>
-            <p class="cart-item-name">${product.name} (${qty}x)</p>
+            <p class="cart-item-name">${product.name} (${quantity}x)</p>
           </div>
           <div class="cart-item-price">Rp.${itemTotal.toLocaleString('id-ID')}</div>
         `;
@@ -151,44 +189,26 @@ const getProductImage = (name: string) => {
     });
 
     const totalPriceEl = document.getElementById('total-price');
-    if (totalPriceEl) {
-      totalPriceEl.textContent = 'Rp.' + total.toLocaleString('id-ID');
-    }
-  }
-
-  function updateQuantityDisplays() {
-    document.querySelectorAll('[data-product-id]').forEach((btn) => {
-      const productId = btn.getAttribute('data-product-id');
-      if (productId) {
-        const card = btn.closest('.product-card');
-        const quantitySpan = card?.querySelector('.quantity');
-        if (quantitySpan) {
-          quantitySpan.textContent = String(cart[productId] || 0);
-        }
-      }
-    });
+    if (totalPriceEl) totalPriceEl.textContent = 'Rp.' + total.toLocaleString('id-ID');
   }
 
   function saveAndUpdate() {
     localStorage.setItem('tuko-cart', JSON.stringify(cart));
-    updateQuantityDisplays();
+    Object.keys(dbProducts).forEach(id => {
+      const el = document.getElementById(`qty-${id}`);
+      if (el) el.textContent = cart[id] || 0;
+    });
     updateCart();
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    // Load existing cart
     const savedCart = localStorage.getItem('tuko-cart');
     if (savedCart) {
-      try {
-        cart = JSON.parse(savedCart);
-      } catch (e) {
-        cart = {};
-      }
-      updateQuantityDisplays();
-      updateCart();
+      try { cart = JSON.parse(savedCart); } catch (e) { cart = {}; }
     }
 
-    // Event Delegation untuk tombol plus/minus
+    loadProducts();
+
     document.addEventListener('click', (e) => {
       const target = e.target.closest('button');
       if (!target) return;
@@ -205,63 +225,30 @@ const getProductImage = (name: string) => {
       }
     });
 
-    // Set default date to today
     const dateInput = document.getElementById('order-date');
-    if (dateInput) {
-      dateInput.value = new Date().toISOString().split('T')[0];
-    }
+    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 
-    // Konfirmasi Button
     const btnKonfirmasi = document.querySelector('.btn-konfirmasi');
     btnKonfirmasi?.addEventListener('click', async () => {
       const selectedMethod = document.getElementById('method').value;
       const orderDate = document.getElementById('order-date').value;
-
-      if (!orderDate) {
-        alert('Silakan pilih tanggal pesanan');
-        return;
-      }
-
       const items = Object.entries(cart)
         .filter(([_, qty]) => qty > 0)
-        .map(([productId, qty]) => {
-          const product = dbProducts[productId];
-          if (!product) return null;
-          return {
-            productId: product.id,
-            qty: qty,
-            price: product.price
-          };
-        })
-        .filter(item => item !== null);
+        .map(([id, qty]) => ({ productId: id, qty, price: dbProducts[id].price }));
 
-      if (items.length === 0) {
-        alert('Keranjang masih kosong');
-        return;
-      }
+      if (items.length === 0) return alert('Keranjang masih kosong');
 
       const totalValue = items.reduce((acc, item) => acc + (item.price * item.qty), 0);
-
-      const userData = localStorage.getItem('user');
-      let customerId = '-NoName-';
-      if (userData) {
-        try {
-          const user = JSON.parse(userData);
-          customerId = user.CUST_ID || user.id || '-NoName-';
-        } catch (e) {
-          console.error("Error parsing user data", e);
-        }
-      }
-
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
       const methodMap = { 'tunai': '1', 'transfer': '2', 'qris': '3' };
 
       try {
-        const response = await fetch('http://localhost:5000/api/orders', {
+        const response = await fetch(window.location.hostname !== 'localhost' ? '/.netlify/functions/orders' : 'http://localhost:5000/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             orderDate,
-            custId: customerId,
+            custId: user.id || '-NoName-',
             userId: '12345678',
             methodId: methodMap[selectedMethod],
             total: totalValue,
@@ -272,45 +259,19 @@ const getProductImage = (name: string) => {
         const result = await response.json();
         if (result.success) {
           const receiptModal = document.getElementById('receipt-modal');
-          const receiptInfo = document.getElementById('receipt-info');
-          const receiptDetails = document.getElementById('receipt-details');
-          const receiptTotal = document.getElementById('receipt-total');
-
-          if (receiptModal && receiptInfo && receiptDetails && receiptTotal) {
-            receiptInfo.innerHTML = `
-              <div>ID Order</div><div>:#${result.orderId}</div>
-              <div>Tanggal</div><div>:${orderDate}</div>
-              <div>Metode</div><div>:${selectedMethod.toUpperCase()}</div>
-            `;
-
-            receiptDetails.innerHTML = items.map(item => {
-              const prod = dbProducts[item.productId];
-              return `
-                <div class="receipt-item">
-                  <span class="receipt-item-name">${prod?.name} (${item.qty}x)</span>
-                  <span class="receipt-item-total">Rp.${(item.price * item.qty).toLocaleString('id-ID')}</span>
-                </div>
-              `;
-            }).join('');
-
-            receiptTotal.textContent = `Rp.${totalValue.toLocaleString('id-ID')}`;
+          if (receiptModal) {
+            document.getElementById('receipt-info').innerHTML = `<div>ID Order</div><div>:#${result.orderId}</div><div>Tanggal</div><div>:${orderDate}</div>`;
+            document.getElementById('receipt-details').innerHTML = items.map(it => `<div class="receipt-item"><span>${dbProducts[it.productId].name} (${it.qty}x)</span><span>Rp.${(it.price * it.qty).toLocaleString('id-ID')}</span></div>`).join('');
+            document.getElementById('receipt-total').textContent = `Rp.${totalValue.toLocaleString('id-ID')}`;
             receiptModal.style.display = 'flex';
           }
-
           cart = {};
           localStorage.removeItem('tuko-cart');
           saveAndUpdate();
-        } else {
-          alert('Gagal: ' + (result.message || 'Error server'));
         }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Terjadi kesalahan koneksi');
-      }
+      } catch (error) { alert('Gagal memproses pesanan'); }
     });
 
-    document.getElementById('btn-close-receipt')?.addEventListener('click', () => {
-      window.location.href = '/';
-    });
+    document.getElementById('btn-close-receipt')?.addEventListener('click', () => window.location.href = '/');
   });
 </script>

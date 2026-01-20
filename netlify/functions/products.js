@@ -21,9 +21,17 @@ exports.handler = async (event, context) => {
   try {
     await client.connect();
     
-    // Ambil semua data produk
-    // Catatan: Pastikan tabel 'products' sudah ada di Neon Anda
-    const result = await client.query('SELECT * FROM products');
+    // Gunakan ALIAS agar kolom tetap huruf besar (untuk kecocokan dengan kode frontend MySQL sebelumnya)
+    const result = await client.query(`
+      SELECT 
+        product_id AS "PRODUCT_ID", 
+        product_name AS "PRODUCT_NAME", 
+        price AS "PRICE", 
+        category AS "CATEGORY", 
+        category_id AS "CATEGORY_ID",
+        stock AS "STOCK" 
+      FROM products
+    `);
     
     return {
       statusCode: 200,
