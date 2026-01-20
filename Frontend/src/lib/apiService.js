@@ -1,5 +1,7 @@
 // API Service untuk frontend Astro
-const API_BASE_URL = "http://127.0.0.1:5000/api";
+const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+const API_BASE_URL = isProduction ? "https://your-backend-url.com/api" : "http://127.0.0.1:5000/api";
+const NETLIFY_FUNCTIONS_URL = "/.netlify/functions";
 
 export const apiService = {
   // Auth API
@@ -67,7 +69,9 @@ export const apiService = {
 
   async getProducts() {
     try {
-      const response = await fetch(`${API_BASE_URL}/products`);
+      // Jika di produksi (Netlify), gunakan Netlify Function yang baru dibuat untuk Neon
+      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/products` : `${API_BASE_URL}/products`;
+      const response = await fetch(url);
       return await response.json();
     } catch (error) {
       console.error("Error fetching products:", error);
