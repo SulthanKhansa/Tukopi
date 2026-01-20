@@ -33,9 +33,9 @@ exports.handler = async (event, context) => {
 
     // 1. Insert into orders
     const orderSql = `
-      INSERT INTO orders (ORDER_DATE, CUST_ID, USER_ID, TOTAL, METHOD_ID) 
+      INSERT INTO "orders" ("ORDER_DATE", "CUST_ID", "USER_ID", "TOTAL", "METHOD_ID") 
       VALUES ($1, $2, $3, $4, $5) 
-      RETURNING ORDER_ID
+      RETURNING "ORDER_ID"
     `;
     const orderRes = await client.query(orderSql, [
       orderDate,
@@ -45,18 +45,18 @@ exports.handler = async (event, context) => {
       methodId || '1'
     ]);
 
-    const orderId = orderRes.rows[0].order_id;
+    const orderId = orderRes.rows[0].ORDER_ID;
 
     // 2. Insert into order_details
     for (const item of items) {
       await client.query(
-        'INSERT INTO order_details (ORDER_ID, PRODUCT_ID, QTY, PRICE) VALUES ($1, $2, $3, $4)',
+        'INSERT INTO "order_details" ("ORDER_ID", "PRODUCT_ID", "QTY", "PRICE") VALUES ($1, $2, $3, $4)',
         [orderId, item.productId, item.qty, item.price]
       );
       
       // 3. Update stock
       await client.query(
-        'UPDATE products SET STOCK = STOCK - $1 WHERE PRODUCT_ID = $2',
+        'UPDATE "products" SET "STOCK" = "STOCK" - $1 WHERE "PRODUCT_ID" = $2',
         [item.qty, item.productId]
       );
     }

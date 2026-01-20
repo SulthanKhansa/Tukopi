@@ -24,13 +24,14 @@ exports.handler = async (event, context) => {
     // Gunakan ALIAS agar kolom tetap huruf besar (untuk kecocokan dengan kode frontend MySQL sebelumnya)
     const result = await client.query(`
       SELECT 
-        product_id AS "PRODUCT_ID", 
-        product_name AS "PRODUCT_NAME", 
-        price AS "PRICE", 
-        category AS "CATEGORY", 
-        category_id AS "CATEGORY_ID",
-        stock AS "STOCK" 
-      FROM products
+        p."PRODUCT_ID" AS "PRODUCT_ID", 
+        p."PRODUCT_NAME" AS "PRODUCT_NAME", 
+        p."PRICE" AS "PRICE", 
+        c."CATEGORY" AS "CATEGORY", 
+        p."CATEGORY_ID" AS "CATEGORY_ID",
+        p."STOCK" AS "STOCK" 
+      FROM "products" p
+      LEFT JOIN "product_categories" c ON p."CATEGORY_ID" = c."CATEGORY_ID"
     `);
     
     return {

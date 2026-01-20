@@ -40,46 +40,64 @@ exports.handler = async (event, context) => {
         };
       }
 
-      // Check Customers
-      const res = await client.query('SELECT * FROM customers WHERE CUST_ID = $1', [id]);
-      if (res.rows.length === 0) {
-        return { statusCode: 404, headers, body: JSON.stringify({ success: false, message: 'ID tidak ditemukan' }) };
+      // 1. Check Cashiers Table (Admin/Staff)
+      const cashierRes = await client.query('SELECT * FROM "cashiers" WHERE "USERNAME" = $1', [id]);
+      if (cashierRes.rows.length > 0) {
+        const user = cashierRes.rows[0];
+        if (password === user.PASSWORD) {
+          return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({
+              success: true,
+              user: { id: user.USER_ID, name: user.USERNAME, role: 'admin' }
+            })
+          };
+        }
       }
 
-      const user = res.rows[0];
-      // Note: In Postgres columns from PG might be lowercase if not quoted
-      const dbPassword = user.password || user.cust_id;
+      // 2. Check Customers Table (Students)
+      const customerRes = await client.query('SELECT * FROM "customers" WHERE "CUST_ID" = $1', [id]);
+      if (customerRes.rows.length > 0) {
+        const user = customerRes.rows[0];
+        // Password for student is their CUST_ID (NIM) if not set
+        const dbPassword = user.PASSWORD || user.CUST_ID;
 
-      if (password === dbPassword) {
-        return {
-          statusCode: 200,
-          headers,
-          body: JSON.stringify({
-            success: true,
-            user: {
-              id: user.cust_id,
-              name: user.cust_name,
-              email: user.email,
-              role: user.cust_id === '24090022' ? 'admin' : 'customer'
-            }
-          })
-        };
-      } else {
-        return { statusCode: 401, headers, body: JSON.stringify({ success: false, message: 'Password salah' }) };
+        if (password === dbPassword) {
+          return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({
+              success: true,
+              user: {
+                id: user.CUST_ID,
+                name: user.CUST_NAME,
+                email: user.EMAIL,
+                role: 'customer'
+              }
+            })
+          };
+        }
       }
+
+      return { 
+        statusCode: 401, 
+        headers, 
+        body: JSON.stringify({ success: false, message: 'ID atau Password salah' }) 
+      };
     }
 
     // REGISTER LOGIC
     if (path.includes('/register')) {
       const { id, name, email, password } = body;
       
-      const check = await client.query('SELECT * FROM customers WHERE CUST_ID = $1', [id]);
+      const check = await client.query('SELECT * FROM "customers" WHERE "CUST_ID" = $1', [id]);
       if (check.rows.length > 0) {
         return { statusCode: 400, headers, body: JSON.stringify({ success: false, message: 'ID sudah terdaftar' }) };
       }
 
       await client.query(
-        'INSERT INTO customers (CUST_ID, CUST_NAME, EMAIL, PASSWORD) VALUES ($1, $2, $3, $4)',
+        'INSERT INTO "customers" ("CUST_ID", "CUST_NAME", "EMAIL", "PASSWORD") VALUES ($1, $2, $3, $4)',
         [id, name, email, password]
       );
 
