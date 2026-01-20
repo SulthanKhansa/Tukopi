@@ -1,31 +1,31 @@
-const { Client } = require('pg');
+const { Client } = require("pg");
 
 exports.handler = async (event, context) => {
   const dbUrl = process.env.NETLIFY_DATABASE_URL;
 
-  if (event.httpMethod === 'OPTIONS') {
+  if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 200,
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
       },
-      body: ''
+      body: "",
     };
   }
 
   const client = new Client({
     connectionString: dbUrl,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
   });
 
   try {
     await client.connect();
 
     // GET ALL ORDERS OR STATS (For Admin)
-    if (event.httpMethod === 'GET') {
-      const isStats = event.path.endsWith('/stats');
+    if (event.httpMethod === "GET") {
+      const isStats = event.path.endsWith("/stats");
 
       if (isStats) {
         const statsRes = await client.query(`
@@ -33,10 +33,10 @@ exports.handler = async (event, context) => {
             COUNT(*) as total_orders, 
             COALESCE(SUM("TOTAL"), 0) as total_revenue,
             (SELECT COUNT(*) FROM "customers") as total_customers,
-            (SELECT COUNT(*) FROM "products") as total_products
+            (SELECT COALESCE(SUM("QTY"), 0) FROM "order_details") as total_sold
           FROM "orders"
         `);
-        
+
         const recentRes = await client.query(`
           SELECT 
             o."ORDER_ID" AS id, o."ORDER_DATE" AS tanggal, 
@@ -51,13 +51,19 @@ exports.handler = async (event, context) => {
 
         return {
           statusCode: 200,
-          headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
-          body: JSON.stringify({ 
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
             data: {
-              stats: statsRes.rows[0],
-              transactions: recentRes.rows
-            }
-          })
+              stats: {
+                ...statsRes.rows[0],
+                total_products: statsRes.rows[0].total_sold, // Mapping total_sold to total_products for frontend compatibility or just update frontend
+              },
+              transactions: recentRes.rows,
+            },
+          }),
         };
       }
 
@@ -82,16 +88,21 @@ exports.handler = async (event, context) => {
       `);
       return {
         statusCode: 200,
-        headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
-        body: JSON.stringify({ data: res.rows })
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ data: res.rows }),
       };
     }
 
     // CREATE NEW ORDER
-    if (event.httpMethod === 'POST') {
-      const { orderDate, custId, userId, methodId, total, items } = JSON.parse(event.body);
+    if (event.httpMethod === "POST") {
+      const { orderDate, custId, userId, methodId, total, items } = JSON.parse(
+        event.body,
+      );
 
-      await client.query('BEGIN');
+      await client.query("BEGIN");
 
       const orderSql = `
         INSERT INTO "orders" ("ORDER_DATE", "CUST_ID", "USER_ID", "TOTAL", "METHOD_ID") 
@@ -100,10 +111,10 @@ exports.handler = async (event, context) => {
       `;
       const orderRes = await client.query(orderSql, [
         orderDate || new Date(),
-        custId || '-NoName-',
-        userId || '12345678',
+        custId || "-NoName-",
+        userId || "12345678",
         total,
-        methodId || '1'
+        methodId || "1",
       ]);
 
       const orderId = orderRes.rows[0].ORDER_ID;
@@ -112,57 +123,74 @@ exports.handler = async (event, context) => {
         for (const item of items) {
           await client.query(
             'INSERT INTO "order_details" ("ORDER_ID", "PRODUCT_ID", "QTY", "PRICE") VALUES ($1, $2, $3, $4)',
-            [orderId, item.productId, item.qty, item.price]
+            [orderId, item.productId, item.qty, item.price],
           );
-          
+
           await client.query(
             'UPDATE "products" SET "STOCK" = "STOCK" - $1 WHERE "PRODUCT_ID" = $2',
-            [item.qty, item.productId]
+            [item.qty, item.productId],
           );
         }
       }
 
-      await client.query('COMMIT');
+      await client.query("COMMIT");
 
       return {
         statusCode: 201,
-        headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
-        body: JSON.stringify({ success: true, message: "Order created", orderId })
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          success: true,
+          message: "Order created",
+          orderId,
+        }),
       };
     }
 
     // UPDATE ORDER
-    if (event.httpMethod === 'PUT') {
-      const id = event.path.split('/').pop();
+    if (event.httpMethod === "PUT") {
+      const id = event.path.split("/").pop();
       const { total, methodId, bank, receipt } = JSON.parse(event.body);
-      
-      await client.query(`
+
+      await client.query(
+        `
         UPDATE "orders" 
         SET "TOTAL" = $1, "METHOD_ID" = $2, "BANK_TRANS" = $3, "RECEIPT_NUMBER" = $4
         WHERE "ORDER_ID" = $5
-      `, [total, methodId, bank, receipt, id]);
+      `,
+        [total, methodId, bank, receipt, id],
+      );
 
       return {
         statusCode: 200,
-        headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
-        body: JSON.stringify({ success: true, message: "Updated" })
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ success: true, message: "Updated" }),
       };
     }
 
     // DELETE ORDER
-    if (event.httpMethod === 'DELETE') {
-      const id = event.path.split('/').pop();
-      await client.query('DELETE FROM "order_details" WHERE "ORDER_ID" = $1', [id]);
+    if (event.httpMethod === "DELETE") {
+      const id = event.path.split("/").pop();
+      await client.query('DELETE FROM "order_details" WHERE "ORDER_ID" = $1', [
+        id,
+      ]);
       await client.query('DELETE FROM "orders" WHERE "ORDER_ID" = $1', [id]);
       return {
         statusCode: 200,
-        headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
-        body: JSON.stringify({ success: true, message: "Deleted" })
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ success: true, message: "Deleted" }),
       };
     }
-
   } catch (err) {
-    if (event.httpMethod === 'POST') await client.query('ROLLBACK');
+    if (event.httpMethod === "POST") await client.query("ROLLBACK");
     console.error("Order error:", err);
     return {
       statusCode: 500,

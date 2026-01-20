@@ -1,4 +1,4 @@
-const { Client } = require('pg');
+const { Client } = require("pg");
 
 exports.handler = async (event, context) => {
   const dbUrl = process.env.NETLIFY_DATABASE_URL;
@@ -8,16 +8,16 @@ exports.handler = async (event, context) => {
   const headers = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS"
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
   };
 
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 200, headers, body: "" };
   }
 
   const client = new Client({
     connectionString: dbUrl,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
   });
 
   try {
@@ -25,41 +25,47 @@ exports.handler = async (event, context) => {
     await client.connect();
 
     // LOGIN LOGIC
-    if (path.includes('/login')) {
+    if (path.includes("/login")) {
       const { id, password } = body;
 
       // Simple Admin Check
-      if (id === 'admin' && password === 'admin') {
+      if (id === "admin" && password === "admin") {
         return {
           statusCode: 200,
           headers,
           body: JSON.stringify({
             success: true,
-            user: { id: 'admin', name: 'Administrator TUKO', role: 'admin' }
-          })
+            user: { id: "admin", name: "Administrator TUKO", role: "admin" },
+          }),
         };
       }
 
       // 1. Check Cashiers Table (Admin/Staff)
       // We check by USER_ID (NIM) or USERNAME to be flexible
-      const cashierRes = await client.query('SELECT * FROM "cashiers" WHERE "USER_ID" = $1 OR "USERNAME" = $2', [id, id]);
+      const cashierRes = await client.query(
+        'SELECT * FROM "cashiers" WHERE "USER_ID" = $1 OR "USERNAME" = $2',
+        [id, id],
+      );
       if (cashierRes.rows.length > 0) {
         const user = cashierRes.rows[0];
         // Allow database password OR "admin" password as requested by user
-        if (password === user.PASSWORD || password === 'admin') {
+        if (password === user.PASSWORD || password === "admin") {
           return {
             statusCode: 200,
             headers,
             body: JSON.stringify({
               success: true,
-              user: { id: user.USER_ID, name: user.USERNAME, role: 'admin' }
-            })
+              user: { id: user.USER_ID, name: user.USERNAME, role: "admin" },
+            }),
           };
         }
       }
 
       // 2. Check Customers Table (Students)
-      const customerRes = await client.query('SELECT * FROM "customers" WHERE "CUST_ID" = $1', [id]);
+      const customerRes = await client.query(
+        'SELECT * FROM "customers" WHERE "CUST_ID" = $1',
+        [id],
+      );
       if (customerRes.rows.length > 0) {
         const user = customerRes.rows[0];
         // Password for student is their CUST_ID (NIM) if not set
@@ -75,43 +81,58 @@ exports.handler = async (event, context) => {
                 id: user.CUST_ID,
                 name: user.CUST_NAME,
                 email: user.EMAIL,
-                role: 'customer'
-              }
-            })
+                role: "customer",
+              },
+            }),
           };
         }
       }
 
-      return { 
-        statusCode: 401, 
-        headers, 
-        body: JSON.stringify({ success: false, message: 'ID atau Password salah' }) 
+      return {
+        statusCode: 401,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: "ID atau Password salah",
+        }),
       };
     }
 
     // REGISTER LOGIC
-    if (path.includes('/register')) {
+    if (path.includes("/register")) {
       const { id, name, email, password } = body;
-      
-      const check = await client.query('SELECT * FROM "customers" WHERE "CUST_ID" = $1', [id]);
+
+      const check = await client.query(
+        'SELECT * FROM "customers" WHERE "CUST_ID" = $1',
+        [id],
+      );
       if (check.rows.length > 0) {
-        return { statusCode: 400, headers, body: JSON.stringify({ success: false, message: 'ID sudah terdaftar' }) };
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            message: "ID sudah terdaftar",
+          }),
+        };
       }
 
       await client.query(
         'INSERT INTO "customers" ("CUST_ID", "CUST_NAME", "EMAIL", "PASSWORD") VALUES ($1, $2, $3, $4)',
-        [id, name, email, password]
+        [id, name, email, password],
       );
 
       return {
         statusCode: 201,
         headers,
-        body: JSON.stringify({ success: true, message: 'Pendaftaran berhasil' })
+        body: JSON.stringify({
+          success: true,
+          message: "Pendaftaran berhasil",
+        }),
       };
     }
 
-    return { statusCode: 404, headers, body: 'Not Found' };
-
+    return { statusCode: 404, headers, body: "Not Found" };
   } catch (err) {
     console.error("Auth error:", err);
     return {
