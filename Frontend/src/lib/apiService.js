@@ -4,16 +4,16 @@ const isProduction = import.meta.env.PROD;
 // Helper untuk deteksi base URL di server vs client
 const getBaseUrl = () => {
   if (typeof window !== "undefined") return ""; // Di browser bisa pakai relative path
-  
+
   // Di server Netlify (Astro SSR), kita coba beberapa env var standar
   // URL provided by Netlify build/runtime env
   const url = process.env.URL || process.env.DEPLOY_PRIME_URL;
   if (url) {
     return url.startsWith("http") ? url : `https://${url}`;
   }
-  
+
   // Fallback dev
-  return "http://localhost:4321"; 
+  return "http://localhost:4321";
 };
 
 const API_BASE_URL = isProduction
@@ -21,9 +21,8 @@ const API_BASE_URL = isProduction
   : "http://127.0.0.1:5000/api";
 
 const getFunctionsUrl = () => {
-  const base = getBaseUrl();
-  // Pastikan tidak ada double slash
-  return `${base.replace(/\/$/, "")}/.netlify/functions`;
+  if (isProduction) return "/.netlify/functions";
+  return "http://localhost:5000/api"; // or whatever your local dev is
 };
 
 export const apiService = {
@@ -162,9 +161,7 @@ export const apiService = {
 
   async getCustomerOrders(id) {
     if (isProduction) {
-      const resp = await fetch(
-        `${getFunctionsUrl()}/customers/${id}/orders`,
-      );
+      const resp = await fetch(`${getFunctionsUrl()}/customers/${id}/orders`);
       const json = await resp.json();
       return json.data || json;
     }
