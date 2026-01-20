@@ -1,10 +1,7 @@
 ---
-// Admin Categories (Kategori)
+// Admin Categories (Kategori) - Client Side Data Fetching
 import Layout from '../../layouts/Layout.astro';
-import { apiService } from '../../lib/apiService';
 import '../../css/admin.css';
-
-const categories = await apiService.getCategories() as any[];
 ---
 
 <Layout title="Data Kategori - TUKO Admin" isAdmin={true}>
@@ -53,22 +50,10 @@ const categories = await apiService.getCategories() as any[];
               <div class="col-name">Nama Kategori</div>
             </div>
             
-            <div class="table-body">
-              {categories.map((item: any) => (
-                <div 
-                  class="transaction-card category-grid" 
-                  data-item={JSON.stringify(item)}
-                  onclick="editCategory(event)"
-                >
-                  <div class="col-id">{item.CATEGORY_ID}</div>
-                  <div class="col-name">{item.CATEGORY}</div>
-                </div>
-              ))}
-              {categories.length === 0 && (
-                <div class="transaction-card empty category-grid">
-                  <span>Belum ada data kategori</span>
-                </div>
-              )}
+            <div id="table-body" class="table-body">
+              <div class="transaction-card empty category-grid">
+                <span>Memuat data kategori...</span>
+              </div>
             </div>
           </div>
         </div>
@@ -102,6 +87,43 @@ const categories = await apiService.getCategories() as any[];
   <script>
     import { apiService } from '../../lib/apiService';
     let currentCategoryId: string | null = null;
+    let categories: any[] = [];
+
+    async function loadCategories() {
+      const tableBody = document.getElementById('table-body');
+      try {
+        const data = await apiService.getCategories();
+        categories = data || [];
+
+        if (tableBody) {
+          if (categories.length === 0) {
+            tableBody.innerHTML = `
+              <div class="transaction-card empty category-grid">
+                <span>Belum ada data kategori</span>
+              </div>`;
+          } else {
+            tableBody.innerHTML = categories.map((item: any) => `
+              <div 
+                class="transaction-card category-grid" 
+                data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}'
+                onclick="editCategory(event)"
+              >
+                <div class="col-id">${item.CATEGORY_ID}</div>
+                <div class="col-name">${item.CATEGORY}</div>
+              </div>
+            `).join('');
+          }
+        }
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        if (tableBody) {
+          tableBody.innerHTML = '<div class="transaction-card empty category-grid"><span>Gagal memuat data.</span></div>';
+        }
+      }
+    }
+
+    // Initialize
+    loadCategories();
 
     function openCategoryModal() {
       const modal = document.getElementById('categoryFormModal');
@@ -188,10 +210,17 @@ const categories = await apiService.getCategories() as any[];
       }
     });
 
+    // Close on outside click
+    const modal = document.getElementById('categoryFormModal');
+    modal?.addEventListener('click', (e) => {
+      if (e.target === modal) closeCategoryModal();
+    });
+
     // Globally expose functions
     (window as any).openCategoryModal = openCategoryModal;
     (window as any).closeCategoryModal = closeCategoryModal;
     (window as any).editCategory = editCategory;
     (window as any).deleteCategory = deleteCategory;
   </script>
+</Layout>
 </Layout>

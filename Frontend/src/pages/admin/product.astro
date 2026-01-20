@@ -1,11 +1,7 @@
 ---
-// Admin Products (Produk)
+// Admin Products (Produk) - Client Side Data Fetching
 import Layout from '../../layouts/Layout.astro';
-import { apiService } from '../../lib/apiService';
 import '../../css/admin.css';
-
-const products = await apiService.getAdminProducts() as any[];
-const categories = await apiService.getCategories() as any[];
 ---
 
 <Layout title="Data Produk - TUKO Admin" isAdmin={true}>
@@ -57,25 +53,10 @@ const categories = await apiService.getCategories() as any[];
               <div class="col-stock">Stok</div>
             </div>
             
-            <div class="table-body">
-              {products.map((item: any) => (
-                <div 
-                  class="transaction-card product-grid" 
-                  data-item={JSON.stringify(item)}
-                  onclick="editProduct(event)"
-                >
-                  <div class="col-id">{item.PRODUCT_ID}</div>
-                  <div class="col-name">{item.PRODUCT_NAME}</div>
-                  <div class="col-price">Rp {parseFloat(item.PRICE).toLocaleString('id-ID')}</div>
-                  <div class="col-category">{item.CATEGORY || 'Uncategorized'}</div>
-                  <div class="col-stock">{item.STOCK || 0}</div>
-                </div>
-              ))}
-              {products.length === 0 && (
-                <div class="transaction-card empty product-grid">
-                  <span>Belum ada data produk</span>
-                </div>
-              )}
+            <div id="table-body" class="table-body">
+              <div class="transaction-card empty product-grid">
+                <span>Memuat data produk...</span>
+              </div>
             </div>
           </div>
         </div>
@@ -106,9 +87,6 @@ const categories = await apiService.getCategories() as any[];
           <label for="category">Kategori</label>
           <select id="category" required>
             <option value="">Pilih Kategori</option>
-            {categories.map((cat: any) => (
-              <option value={cat.CATEGORY_ID}>{cat.CATEGORY}</option>
-            ))}
           </select>
         </div>
 
@@ -129,6 +107,65 @@ const categories = await apiService.getCategories() as any[];
     import { apiService } from '../../lib/apiService';
 
     let currentProductId: string | null = null;
+    let products: any[] = [];
+    let categories: any[] = [];
+
+    async function loadData() {
+      const tableBody = document.getElementById('table-body');
+      const categorySelect = document.getElementById('category') as HTMLSelectElement;
+
+      try {
+        const [productsData, categoriesData] = await Promise.all([
+          apiService.getAdminProducts(),
+          apiService.getCategories()
+        ]);
+
+        products = productsData || [];
+        categories = categoriesData || [];
+
+        // Fill category select
+        if (categorySelect) {
+          categorySelect.innerHTML = '<option value="">Pilih Kategori</option>';
+          categories.forEach((cat: any) => {
+            const opt = document.createElement('option');
+            opt.value = cat.CATEGORY_ID;
+            opt.textContent = cat.CATEGORY;
+            categorySelect.appendChild(opt);
+          });
+        }
+
+        if (tableBody) {
+          if (products.length === 0) {
+            tableBody.innerHTML = `
+              <div class="transaction-card empty product-grid">
+                <span>Belum ada data produk</span>
+              </div>`;
+          } else {
+            tableBody.innerHTML = products.map((item: any) => `
+              <div 
+                class="transaction-card product-grid" 
+                data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}'
+                onclick="editProduct(event)"
+              >
+                <div class="col-id">${item.PRODUCT_ID}</div>
+                <div class="col-name">${item.PRODUCT_NAME}</div>
+                <div class="col-price">Rp ${parseFloat(item.PRICE).toLocaleString('id-ID')}</div>
+                <div class="col-category">${item.CATEGORY || 'Uncategorized'}</div>
+                <div class="col-stock">${item.STOCK || 0}</div>
+              </div>
+            `).join('');
+          }
+        }
+      } catch (error) {
+        console.error('Error loading products:', error);
+        if (tableBody) {
+          tableBody.innerHTML = '<div class="transaction-card empty product-grid"><span>Gagal memuat data.</span></div>';
+        }
+      }
+    }
+
+    // Initialize
+    loadData();
 
     function openProductModal() {
       const modal = document.getElementById('productFormModal');
@@ -166,7 +203,7 @@ const categories = await apiService.getCategories() as any[];
       
       (document.getElementById('productId') as HTMLInputElement).value = product.PRODUCT_ID;
       (document.getElementById('productName') as HTMLInputElement).value = product.PRODUCT_NAME || '';
-      (document.getElementById('category') as HTMLSelectElement).value = product.CATEGORY_ID || 'KP';
+      (document.getElementById('category') as HTMLSelectElement).value = product.CATEGORY_ID || '';
       (document.getElementById('price') as HTMLInputElement).value = (parseInt(product.PRICE) || 0).toString();
       (document.getElementById('stock') as HTMLInputElement).value = (product.STOCK || 0).toString();
 
@@ -236,11 +273,6 @@ const categories = await apiService.getCategories() as any[];
     });
 
     // Globally expose functions for onclick
-    (window as any).openProductModal = openProductModal;
-    (window as any).closeProductModal = closeProductModal;
-    (window as any).editProduct = editProduct;
-    (window as any).deleteProduct = deleteProduct;
-  </script>
     (window as any).openProductModal = openProductModal;
     (window as any).closeProductModal = closeProductModal;
     (window as any).editProduct = editProduct;

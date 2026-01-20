@@ -59,28 +59,11 @@ const cashiers = await apiService.getAdminCashiers() as any[];
               <div class="col-gender">Gender</div>
             </div>
             
-            <div class="table-body">
-              {cashiers.map((item: any) => (
-                <div 
-                  class="transaction-card kasir-grid" 
-                  data-item={JSON.stringify(item)}
-                  onclick="editKasir(event)"
-                >
-                  <div class="col-id">{item.USER_ID}</div>
-                  <div class="col-username">{item.USERNAME}</div>
-                  <div class="col-address">{item.ADDRESS}</div>
-                  <div class="col-pob">{item.PLACE_OF_BIRTH}</div>
-                  <div class="col-dob">{item.DATE_OF_BIRTH ? new Date(item.DATE_OF_BIRTH).toLocaleDateString('id-ID') : '-'}</div>
-                  <div class="col-contact">{item.CONTACT_NUMBER}</div>
-                  <div class="col-email">{item.EMAIL}</div>
-                  <div class="col-gender">{item.GENDER_ID === 'L' ? 'Laki-Laki' : 'Perempuan'}</div>
-                </div>
-              ))}
-              {cashiers.length === 0 && (
-                <div class="transaction-card empty kasir-grid">
-                  <span>Belum ada data kasir</span>
-                </div>
-              )}
+            <div class="table-body" id="kasirTableBody">
+              {/* Data will be loaded via client-side script */}
+              <div class="transaction-card empty kasir-grid">
+                <span>Memuat data...</span>
+              </div>
             </div>
           </div>
         </div>
@@ -143,48 +126,94 @@ const cashiers = await apiService.getAdminCashiers() as any[];
     </div>
   </div>
 
-  <script is:inline>
-    let currentKasirId = null;
+  <script>
+    import { apiService } from '../../lib/apiService';
+
+    let currentKasirId: string | null = null;
+    let allCashiers: any[] = [];
+
+    async function loadCashiers() {
+      const container = document.getElementById('kasirTableBody');
+      try {
+        const data = await apiService.getAdminCashiers();
+        allCashiers = data || [];
+        
+        if (!container) return;
+
+        if (allCashiers.length === 0) {
+          container.innerHTML = `
+            <div class="transaction-card empty kasir-grid">
+              <span>Belum ada data kasir</span>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = allCashiers.map((item: any) => `
+          <div 
+            class="transaction-card kasir-grid" 
+            onclick="editKasir(event, '${item.USER_ID}')"
+            style="cursor: pointer"
+          >
+            <div class="col-id">${item.USER_ID}</div>
+            <div class="col-username">${item.USERNAME}</div>
+            <div class="col-address">${item.ADDRESS || '-'}</div>
+            <div class="col-pob">${item.PLACE_OF_BIRTH || '-'}</div>
+            <div class="col-dob">${item.DATE_OF_BIRTH ? new Date(item.DATE_OF_BIRTH).toLocaleDateString('id-ID') : '-'}</div>
+            <div class="col-contact">${item.CONTACT_NUMBER || '-'}</div>
+            <div class="col-email">${item.EMAIL || '-'}</div>
+            <div class="col-gender">${item.GENDER_ID === 'L' ? 'Laki-Laki' : 'Perempuan'}</div>
+          </div>
+        `).join('');
+      } catch (err) {
+        if (container) container.innerHTML = '<div class="transaction-card empty"><span>Gagal memuat data</span></div>';
+        console.error(err);
+      }
+    }
 
     function openKasirModal() {
       const modal = document.getElementById('kasirFormModal');
-      const form = document.getElementById('kasirForm');
-      const deleteBtn = document.getElementById('deleteKasirBtn');
+      const form = document.getElementById('kasirForm') as HTMLFormElement;
+      const deleteBtn = document.getElementById('deleteKasirBtn') as HTMLButtonElement;
       
       currentKasirId = null;
-      form.reset();
-      document.getElementById('kasirId').value = '';
-      document.getElementById('kasirId').readOnly = false; // Biarkan admin mengisi ID Kasir
-      deleteBtn.disabled = true;
-      modal.classList.add('active');
+      if (form) form.reset();
+      (document.getElementById('kasirId') as HTMLInputElement).value = '';
+      (document.getElementById('kasirId') as HTMLInputElement).readOnly = false;
+      if (deleteBtn) deleteBtn.disabled = true;
+      modal?.classList.add('active');
     }
 
     function closeKasirModal() {
       const modal = document.getElementById('kasirFormModal');
-      modal.classList.remove('active');
-      document.getElementById('kasirId').readOnly = true;
+      modal?.classList.remove('active');
+      const idInput = document.getElementById('kasirId') as HTMLInputElement;
+      if (idInput) idInput.readOnly = true;
       currentKasirId = null;
     }
 
-    function editKasir(event) {
-      event.stopPropagation();
-      const kasir = JSON.parse(event.currentTarget.dataset.item);
-      currentKasirId = kasir.USER_ID;
-      const deleteBtn = document.getElementById('deleteKasirBtn');
+    function editKasir(event: any, userId: string) {
+      if (event && event.stopPropagation) event.stopPropagation();
       
-      document.getElementById('kasirId').value = kasir.USER_ID;
-      document.getElementById('kasirId').readOnly = true; // Jangan ubah ID saat edit
-      document.getElementById('username').value = kasir.USERNAME || '';
-      document.getElementById('address').value = kasir.ADDRESS || '';
-      document.getElementById('pob').value = kasir.PLACE_OF_BIRTH || '';
-      document.getElementById('dob').value = kasir.DATE_OF_BIRTH ? kasir.DATE_OF_BIRTH.split('T')[0] : '';
-      document.getElementById('contact').value = kasir.CONTACT_NUMBER || '';
-      document.getElementById('email').value = kasir.EMAIL || '';
-      document.getElementById('gender').value = kasir.GENDER_ID || 'L';
+      const kasir = allCashiers.find(c => c.USER_ID === userId);
+      if (!kasir) return;
 
-      deleteBtn.disabled = false;
+      currentKasirId = kasir.USER_ID;
+      const deleteBtn = document.getElementById('deleteKasirBtn') as HTMLButtonElement;
+      
+      (document.getElementById('kasirId') as HTMLInputElement).value = kasir.USER_ID;
+      (document.getElementById('kasirId') as HTMLInputElement).readOnly = true;
+      (document.getElementById('username') as HTMLInputElement).value = kasir.USERNAME || '';
+      (document.getElementById('address') as HTMLInputElement).value = kasir.ADDRESS || '';
+      (document.getElementById('pob') as HTMLInputElement).value = kasir.PLACE_OF_BIRTH || '';
+      (document.getElementById('dob') as HTMLInputElement).value = kasir.DATE_OF_BIRTH ? kasir.DATE_OF_BIRTH.split('T')[0] : '';
+      (document.getElementById('contact') as HTMLInputElement).value = kasir.CONTACT_NUMBER || '';
+      (document.getElementById('email') as HTMLInputElement).value = kasir.EMAIL || '';
+      (document.getElementById('gender') as HTMLSelectElement).value = kasir.GENDER_ID || 'L';
+
+      if (deleteBtn) deleteBtn.disabled = false;
       const modal = document.getElementById('kasirFormModal');
-      modal.classList.add('active');
+      modal?.classList.add('active');
     }
 
     async function deleteKasir() {
@@ -195,10 +224,10 @@ const cashiers = await apiService.getAdminCashiers() as any[];
       if (!confirm('Yakin ingin menghapus kasir ini?')) return;
 
       try {
-        const response = await fetch(`http://127.0.0.1:5000/api/cashiers/${currentKasirId}`, {
+        const res = await apiService.safeFetch(`/.netlify/functions/cashiers/${currentKasirId}`, {
           method: 'DELETE',
         });
-        if (response.ok) {
+        if (res && res.success !== false) {
           window.location.reload();
         } else {
           alert('Gagal menghapus data');
@@ -210,26 +239,25 @@ const cashiers = await apiService.getAdminCashiers() as any[];
     }
 
     const form = document.getElementById('kasirForm');
-    form.addEventListener('submit', async (e) => {
+    form?.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const formData = {
-        user_id: document.getElementById('kasirId').value,
-        username: document.getElementById('username').value,
-        address: document.getElementById('address').value,
-        place_of_birth: document.getElementById('pob').value,
-        date_of_birth: document.getElementById('dob').value,
-        contact_number: document.getElementById('contact').value,
-        email: document.getElementById('email').value,
-        gender_id: document.getElementById('gender').value,
+        user_id: (document.getElementById('kasirId') as HTMLInputElement).value,
+        username: (document.getElementById('username') as HTMLInputElement).value,
+        address: (document.getElementById('address') as HTMLInputElement).value,
+        place_of_birth: (document.getElementById('pob') as HTMLInputElement).value,
+        date_of_birth: (document.getElementById('dob') as HTMLInputElement).value,
+        contact_number: (document.getElementById('contact') as HTMLInputElement).value,
+        email: (document.getElementById('email') as HTMLInputElement).value,
+        gender_id: (document.getElementById('gender') as HTMLSelectElement).value,
       };
 
       try {
-        const baseUrl = 'http://127.0.0.1:5000/api/cashiers';
-        const endpoint = currentKasirId ? `${baseUrl}/${currentKasirId}` : baseUrl;
+        const url = `/.netlify/functions/cashiers${currentKasirId ? '/' + currentKasirId : ''}`;
         const method = currentKasirId ? 'PUT' : 'POST';
 
-        const response = await fetch(endpoint, {
+        const response = await fetch(url, {
           method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
@@ -249,10 +277,20 @@ const cashiers = await apiService.getAdminCashiers() as any[];
 
     // Close modal when clicking outside
     const modal = document.getElementById('kasirFormModal');
-    modal.addEventListener('click', (e) => {
+    modal?.addEventListener('click', (e) => {
       if (e.target === modal) {
         closeKasirModal();
       }
     });
+
+    // Global Init
+    loadCashiers();
+
+    // Expose functions to window
+    (window as any).openKasirModal = openKasirModal;
+    (window as any).closeKasirModal = closeKasirModal;
+    (window as any).editKasir = editKasir;
+    (window as any).deleteKasir = deleteKasir;
   </script>
+</Layout>
 </Layout>

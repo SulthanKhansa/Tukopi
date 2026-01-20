@@ -51,7 +51,7 @@ const transactions = (dashboardData?.transactions || []) as any[];
         <div class="stat-card">
           <div class="stat-icon"><i data-feather="users"></i></div>
           <div class="stat-info">
-            <div class="stat-number">{stats.total_customers || 0}</div>
+            <div class="stat-number" id="totalCustomers">0</div>
             <div class="stat-label">Total Pelanggan</div>
           </div>
         </div>
@@ -59,7 +59,7 @@ const transactions = (dashboardData?.transactions || []) as any[];
         <div class="stat-card">
           <div class="stat-icon"><i data-feather="shopping-cart"></i></div>
           <div class="stat-info">
-            <div class="stat-number">{stats.total_products || 0}</div>
+            <div class="stat-number" id="totalProducts">0</div>
             <div class="stat-label">Jumlah Menu</div>
           </div>
         </div>
@@ -67,7 +67,7 @@ const transactions = (dashboardData?.transactions || []) as any[];
         <div class="stat-card">
           <div class="stat-icon"><i data-feather="file-text"></i></div>
           <div class="stat-info">
-            <div class="stat-number">{stats.total_orders || 0}</div>
+            <div class="stat-number" id="totalOrders">0</div>
             <div class="stat-label">Total Order</div>
           </div>
         </div>
@@ -89,40 +89,63 @@ const transactions = (dashboardData?.transactions || []) as any[];
               <div class="col-receipt">Nota</div>
             </div>
             
-            <div class="table-body">
-              {transactions.map((tr: any) => (
-                <div class="transaction-card dashboard-grid">
-                  <div class="col-id">#{tr.id}</div>
-                  <div class="col-date">
-                    {new Date(tr.tanggal).toLocaleDateString('id-ID', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric'
-                    })}
-                  </div>
-                  <div class="col-customer">{tr.pelanggan || '-'}</div>
-                  <div class="col-cashier">{tr.kasir || '-'}</div>
-                  <div class="col-total">
-                    {new Intl.NumberFormat('id-ID', {
-                      style: 'currency',
-                      currency: 'IDR',
-                      minimumFractionDigits: 0
-                    }).format(Number(tr.total || 0))}
-                  </div>
-                  <div class="col-method">{tr.metode_pembayaran || '-'}</div>
-                  <div class="col-bank">{tr.bank || '-'}</div>
-                  <div class="col-receipt">{tr.nomor_nota || '-'}</div>
-                </div>
-              ))}
-              {transactions.length === 0 && (
-                <div class="transaction-card empty dashboard-grid">
-                  <span>Belum ada transaksi terakhir</span>
-                </div>
-              )}
+            <div class="table-body" id="recentTableBody">
+              <div class="transaction-card empty dashboard-grid">
+                <span>Memuat data...</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </main>
   </div>
+
+  <script>
+    import { apiService } from '../../lib/apiService';
+    import feather from 'feather-icons';
+
+    async function loadDashboard() {
+      try {
+        const data = await apiService.getAdminDashboard();
+        const stats = data?.stats || { total_customers: 0, total_products: 0, total_orders: 0 };
+        const transactions = data?.transactions || [];
+
+        // Update Stats
+        const tc = document.getElementById('totalCustomers');
+        if (tc) tc.innerText = stats.total_customers || 0;
+        const tp = document.getElementById('totalProducts');
+        if (tp) tp.innerText = stats.total_products || 0;
+        const to = document.getElementById('totalOrders');
+        if (to) to.innerText = stats.total_orders || 0;
+
+        // Update Table
+        const container = document.getElementById('recentTableBody');
+        if (container) {
+          if (transactions.length === 0) {
+            container.innerHTML = `<div class="transaction-card empty dashboard-grid"><span>Belum ada transaksi terakhir</span></div>`;
+          } else {
+            container.innerHTML = transactions.map((tr: any) => `
+              <div class="transaction-card dashboard-grid">
+                <div class="col-id">#${tr.id}</div>
+                <div class="col-date">${new Date(tr.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                <div class="col-customer">${tr.pelanggan || '-'}</div>
+                <div class="col-cashier">${tr.kasir || '-'}</div>
+                <div class="col-total">${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(tr.total || 0))}</div>
+                <div class="col-method">${tr.metode_pembayaran || '-'}</div>
+                <div class="col-bank">${tr.bank || '-'}</div>
+                <div class="col-receipt">${tr.nomor_nota || '-'}</div>
+              </div>
+            `).join('');
+          }
+        }
+        
+        // Re-init icons
+        feather.replace();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    loadDashboard();
+  </script>
 </Layout>
