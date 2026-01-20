@@ -10,11 +10,15 @@
   },
   "dependencies": {
     "@astrojs/netlify": "^6.6.4",
-    "astro": "^5.16.9"
+    "astro": "^5.16.9",
+    "feather-icons": "^4.29.2"
   },
   "description": "```sh npm create astro@latest -- --template minimal ```",
   "main": "index.js",
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@types/feather-icons": "^4.29.4"
+  }
 }

@@ -2,8 +2,6 @@
 const isProduction = import.meta.env.PROD;
 
 // Helper untuk deteksi base URL di server vs client
-const getBaseUrl = () => {
-  return ""; // In static mode, relative path /.netlify/functions works fine in browser
 const API_BASE_URL = isProduction
   ? "https://your-backend-url.com/api"
   : "http://127.0.0.1:5000/api";
@@ -304,6 +302,83 @@ export const apiService = {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
+      });
+      return await response.json();
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+
+  async createCustomer(data) {
+    try {
+      const url = isProduction
+        ? `${getFunctionsUrl()}/customers`
+        : `${API_BASE_URL}/customers`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+
+  async deleteCustomer(id) {
+    try {
+      const url = isProduction
+        ? `${getFunctionsUrl()}/customers/${id}`
+        : `${API_BASE_URL}/customers/${id}`;
+      const response = await fetch(url, {
+        method: "DELETE",
+      });
+      return await response.json();
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+
+  // Cashier crud
+  async createCashier(data) {
+    try {
+      const url = isProduction
+        ? `${getFunctionsUrl()}/cashiers`
+        : `${API_BASE_URL}/cashiers`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+
+  async updateCashier(id, data) {
+    try {
+      const url = isProduction
+        ? `${getFunctionsUrl()}/cashiers/${id}`
+        : `${API_BASE_URL}/cashiers/${id}`;
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+
+  async deleteCashier(id) {
+    try {
+      const url = isProduction
+        ? `${getFunctionsUrl()}/cashiers/${id}`
+        : `${API_BASE_URL}/cashiers/${id}`;
+      const response = await fetch(url, {
+        method: "DELETE",
       });
       return await response.json();
     } catch (error) {
