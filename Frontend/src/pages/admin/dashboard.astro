@@ -60,7 +60,7 @@ const transactions = (dashboardData?.transactions || []) as any[];
           <div class="stat-icon"><i data-feather="shopping-cart"></i></div>
           <div class="stat-info">
             <div class="stat-number" id="totalProducts">0</div>
-            <div class="stat-label">Jumlah Menu</div>
+            <div class="stat-label">Produk Terjual</div>
           </div>
         </div>
 
@@ -101,7 +101,7 @@ const transactions = (dashboardData?.transactions || []) as any[];
   </div>
 
   <script>
-    import { apiService } from '../../lib/apiService';
+    import { apiService } from '../../lib/apiService.js';
     import feather from 'feather-icons';
 
     async function loadDashboard() {
