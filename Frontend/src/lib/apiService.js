@@ -4,72 +4,78 @@ const isProduction = import.meta.env.PROD;
 // Helper untuk deteksi base URL di server vs client
 const getBaseUrl = () => {
   if (typeof window !== "undefined") return ""; // Di browser bisa pakai relative path
-  return process.env.URL || process.env.DEPLOY_PRIME_URL || ""; // Di server Netlify butuh absolute path
+  
+  // Di server Netlify (Astro SSR), kita coba beberapa env var standar
+  const url = process.env.URL || process.env.DEPLOY_PRIME_URL || process.env.SITE;
+  if (url) {
+    return url.startsWith("http") ? url : `https://${url}`;
+  }
+  return ""; // Fallback
 };
 
 const API_BASE_URL = isProduction
   ? "https://your-backend-url.com/api"
   : "http://127.0.0.1:5000/api";
 
-const NETLIFY_FUNCTIONS_URL = `${getBaseUrl()}/.netlify/functions`;
+const getFunctionsUrl = () => {
+  const base = getBaseUrl();
+  // Pastikan tidak ada double slash
+  return `${base.replace(/\/$/, "")}/.netlify/functions`;
+};
 
 export const apiService = {
+  // Common Fetcher with better error handling
+  async safeFetch(url, options = {}) {
+    try {
+      console.log(`[apiService] Fetching: ${url}`);
+      const resp = await fetch(url, options);
+      if (!resp.ok) {
+        console.error(`[apiService] HTTP Error ${resp.status} for ${url}`);
+        return null;
+      }
+      return await resp.json();
+    } catch (err) {
+      console.error(`[apiService] Fetch failed for ${url}:`, err.message);
+      return null;
+    }
+  },
+
   // Auth API
   async login(id, password) {
-    try {
-      const url = isProduction
-        ? `${NETLIFY_FUNCTIONS_URL}/auth/login`
-        : `${API_BASE_URL}/auth/login`;
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, password }),
-      });
-      return await response.json();
-    } catch (error) {
-      console.error("Login error:", error);
-      return { success: false, error: error.message };
-    }
+    const url = isProduction
+      ? `${getFunctionsUrl()}/auth/login`
+      : `${API_BASE_URL}/auth/login`;
+    const res = await this.safeFetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, password }),
+    });
+    return res || { success: false, error: "Network error" };
   },
 
   async register(id, name, email, password) {
-    try {
-      const url = isProduction
-        ? `${NETLIFY_FUNCTIONS_URL}/auth/register`
-        : `${API_BASE_URL}/auth/register`;
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, name, email, password }),
-      });
-      return await response.json();
-    } catch (error) {
-      console.error("Register error:", error);
-      return { success: false, error: error.message };
-    }
+    const url = isProduction
+      ? `${getFunctionsUrl()}/auth/register`
+      : `${API_BASE_URL}/auth/register`;
+    const res = await this.safeFetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, name, email, password }),
+    });
+    return res || { success: false, error: "Network error" };
   },
 
-  // Basic Fetcher (Helper)
+  // Basic Fetcher (Helper for local backend)
   async fetchAdmin(endpoint) {
-    try {
-      const resp = await fetch(`${API_BASE_URL}${endpoint}`);
-      if (!resp.ok) throw new Error(`HTTP Error: ${resp.status}`);
-      const json = await resp.json();
-      return json.data || json; // Return .data if exists, otherwise the whole json
-    } catch (err) {
-      console.error(`Fetch error at ${endpoint}:`, err);
-      return null;
-    }
+    return await this.safeFetch(`${API_BASE_URL}${endpoint}`);
   },
 
   // Admin Dashboard API
   async getAdminDashboard() {
     if (isProduction) {
-      const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/orders/stats`);
-      const json = await resp.json();
-      // json.data now contains { stats: {...}, transactions: [...] }
+      const json = await this.safeFetch(`${getFunctionsUrl()}/orders/stats`);
       return (
-        json.data || {
+        json?.data || {
           stats: { total_orders: 0, total_revenue: 0 },
           transactions: [],
         }
@@ -80,36 +86,32 @@ export const apiService = {
 
   async getAdminOrders() {
     if (isProduction) {
-      const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/orders`);
-      const json = await resp.json();
-      return json.data || [];
+      const json = await this.safeFetch(`${getFunctionsUrl()}/orders`);
+      return json?.data || [];
     }
     return (await this.fetchAdmin("/orders")) || [];
   },
 
   async getAdminCashiers() {
     if (isProduction) {
-      const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/cashiers`);
-      const json = await resp.json();
-      return json.data || [];
+      const json = await this.safeFetch(`${getFunctionsUrl()}/cashiers`);
+      return json?.data || [];
     }
     return (await this.fetchAdmin("/cashiers")) || [];
   },
 
   async getAdminCustomers() {
     if (isProduction) {
-      const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/customers`);
-      const json = await resp.json();
-      return json.data || [];
+      const json = await this.safeFetch(`${getFunctionsUrl()}/customers`);
+      return json?.data || [];
     }
     return (await this.fetchAdmin("/customers")) || [];
   },
 
   async getAdminProducts() {
     if (isProduction) {
-      const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/products`);
-      const json = await resp.json();
-      return json.data || [];
+      const json = await this.safeFetch(`${getFunctionsUrl()}/products`);
+      return json?.data || [];
     }
     return (await this.fetchAdmin("/products")) || [];
   },
@@ -118,7 +120,7 @@ export const apiService = {
     try {
       // Jika di produksi (Netlify), gunakan Netlify Function yang baru dibuat untuk Neon
       const url = isProduction
-        ? `${NETLIFY_FUNCTIONS_URL}/products`
+        ? `${getFunctionsUrl()}/products`
         : `${API_BASE_URL}/products`;
       const response = await fetch(url);
       return await response.json();
@@ -130,9 +132,8 @@ export const apiService = {
 
   async getCategories() {
     if (isProduction) {
-      const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/categories`);
-      const json = await resp.json();
-      return json.data || [];
+      const json = await this.safeFetch(`${getFunctionsUrl()}/categories`);
+      return json?.data || [];
     }
     return (await this.fetchAdmin("/categories")) || [];
   },
@@ -140,9 +141,8 @@ export const apiService = {
   // Per-ID Lookups
   async getCustomerById(id) {
     if (isProduction) {
-      const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/customers/${id}`);
-      const json = await resp.json();
-      return json.data || json;
+      const json = await this.safeFetch(`${getFunctionsUrl()}/customers/${id}`);
+      return json?.data || json;
     }
     return await this.fetchAdmin(`/customers/${id}`);
   },
@@ -160,7 +160,7 @@ export const apiService = {
   async getCustomerOrders(id) {
     if (isProduction) {
       const resp = await fetch(
-        `${NETLIFY_FUNCTIONS_URL}/customers/${id}/orders`,
+        `${getFunctionsUrl()}/customers/${id}/orders`,
       );
       const json = await resp.json();
       return json.data || json;
@@ -172,7 +172,7 @@ export const apiService = {
   async createCategory(id, name) {
     try {
       const url = isProduction
-        ? `${NETLIFY_FUNCTIONS_URL}/categories`
+        ? `${getFunctionsUrl()}/categories`
         : `${API_BASE_URL}/categories`;
       const response = await fetch(url, {
         method: "POST",
@@ -188,7 +188,7 @@ export const apiService = {
   async updateCategory(id, name) {
     try {
       const url = isProduction
-        ? `${NETLIFY_FUNCTIONS_URL}/categories/${id}`
+        ? `${getFunctionsUrl()}/categories/${id}`
         : `${API_BASE_URL}/categories/${id}`;
       const response = await fetch(url, {
         method: "PUT",
@@ -204,7 +204,7 @@ export const apiService = {
   async deleteCategory(id) {
     try {
       const url = isProduction
-        ? `${NETLIFY_FUNCTIONS_URL}/categories/${id}`
+        ? `${getFunctionsUrl()}/categories/${id}`
         : `${API_BASE_URL}/categories/${id}`;
       const response = await fetch(url, {
         method: "DELETE",
@@ -218,7 +218,7 @@ export const apiService = {
   async createProduct(data) {
     try {
       const url = isProduction
-        ? `${NETLIFY_FUNCTIONS_URL}/products`
+        ? `${getFunctionsUrl()}/products`
         : `${API_BASE_URL}/products`;
       const response = await fetch(url, {
         method: "POST",
@@ -234,7 +234,7 @@ export const apiService = {
   async updateProduct(id, data) {
     try {
       const url = isProduction
-        ? `${NETLIFY_FUNCTIONS_URL}/products/${id}`
+        ? `${getFunctionsUrl()}/products/${id}`
         : `${API_BASE_URL}/products/${id}`;
       const response = await fetch(url, {
         method: "PUT",
@@ -250,7 +250,7 @@ export const apiService = {
   async deleteProduct(id) {
     try {
       const url = isProduction
-        ? `${NETLIFY_FUNCTIONS_URL}/products/${id}`
+        ? `${getFunctionsUrl()}/products/${id}`
         : `${API_BASE_URL}/products/${id}`;
       const response = await fetch(url, {
         method: "DELETE",
@@ -264,7 +264,7 @@ export const apiService = {
   async createOrder(orderData) {
     try {
       const url = isProduction
-        ? `${NETLIFY_FUNCTIONS_URL}/orders`
+        ? `${getFunctionsUrl()}/orders`
         : `${API_BASE_URL}/orders`;
       const response = await fetch(url, {
         method: "POST",
@@ -280,7 +280,7 @@ export const apiService = {
   async updateOrder(id, data) {
     try {
       const url = isProduction
-        ? `${NETLIFY_FUNCTIONS_URL}/orders/${id}`
+        ? `${getFunctionsUrl()}/orders/${id}`
         : `${API_BASE_URL}/orders/${id}`;
       const response = await fetch(url, {
         method: "PUT",
@@ -296,7 +296,7 @@ export const apiService = {
   async deleteOrder(id) {
     try {
       const url = isProduction
-        ? `${NETLIFY_FUNCTIONS_URL}/orders/${id}`
+        ? `${getFunctionsUrl()}/orders/${id}`
         : `${API_BASE_URL}/orders/${id}`;
       const response = await fetch(url, {
         method: "DELETE",
@@ -310,7 +310,7 @@ export const apiService = {
   async updateCustomer(id, data) {
     try {
       const url = isProduction
-        ? `${NETLIFY_FUNCTIONS_URL}/customers/${id}`
+        ? `${getFunctionsUrl()}/customers/${id}`
         : `${API_BASE_URL}/customers/${id}`;
       const response = await fetch(url, {
         method: "PUT",
