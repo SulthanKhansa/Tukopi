@@ -1,0 +1,144 @@
+.hero {
+  background-color: #ffffff;
+  padding: 0 44px;
+  overflow: hidden;
+}
+
+.hero-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+  min-height: 520px;
+}
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  padding-top: 20px;
+}
+
+.hero-title {
+  font-family: "Irish Grover", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 80px;
+  line-height: 1.1;
+  letter-spacing: -2px;
+  color: #000;
+  margin: 0;
+}
+
+.hero-description {
+  font-family: "Jua", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 18px;
+  line-height: 1.6;
+  letter-spacing: 0;
+  color: #000;
+  margin: 0;
+}
+
+.cta-button {
+  background-color: #4a4a4a;
+  color: white;
+  border: none;
+  padding: 14px 40px;
+  border-radius: 28px;
+  font-size: 16px;
+  cursor: pointer;
+  width: fit-content;
+  font-weight: 500;
+  transition:
+    background-color 0.3s ease,
+    transform 0.2s ease;
+  margin-top: 10px;
+  display: inline-block;
+  text-decoration: none;
+}
+
+.cta-button:hover {
+  background-color: #3a3a3a;
+  transform: translateY(-2px);
+}
+
+.cta-button:active {
+  transform: translateY(0);
+}
+
+.hero-image {
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+  height: 525px;
+  margin: 0 -44px 0 0;
+}
+
+.hero-image img {
+  width: auto;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 1024px) {
+  .hero {
+    padding: 30px 30px;
+  }
+
+  .hero-container {
+    gap: 40px;
+  }
+
+  .hero-title {
+    font-size: 64px;
+  }
+
+  .hero-description {
+    font-size: 16px;
+  }
+
+  .hero-image img {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 30px 20px;
+  }
+
+  .hero-container {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    align-items: center;
+  }
+
+  .hero-content {
+    gap: 20px;
+  }
+
+  .hero-title {
+    font-size: 48px;
+  }
+
+  .hero-description {
+    font-size: 16px;
+  }
+
+  .cta-button {
+    padding: 12px 32px;
+    font-size: 14px;
+  }
+
+  .hero-image {
+    justify-content: center;
+  }
+
+  .hero-image img {
+    max-width: 100%;
+  }
+}

@@ -1,0 +1,82 @@
+---
+import AuthLayout from '../layouts/AuthLayout.astro';
+import '../css/auth.css';
+---
+
+<AuthLayout title="Login - TUKO">
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="logo">
+        <img src="/tuko.png" alt="TUKO Logo" />
+      </div>
+      
+      <p class="disclaimer">
+        By clicking "Log in" you agree to our Terms of Use and acknowledge that your information will be used as described in our Privacy Policy.
+      </p>
+
+      <form id="loginForm">
+        <div class="input-wrapper">
+          <i data-feather="user" class="input-icon"></i>
+          <input type="text" id="nimInput" placeholder="NIM Mahasiswa" required />
+        </div>
+        <div class="input-wrapper">
+          <i data-feather="lock" class="input-icon"></i>
+          <input type="password" id="passwordInput" placeholder="Password (NIM)" required />
+        </div>
+        <button type="submit" class="btn-auth">Masuk</button>
+        <p id="errorMsg" style="color: #ff4d4d; font-size: 14px; margin-top: 10px; text-align: center; display: none;"></p>
+      </form>
+
+      <p class="auth-redirect-link" id="signupLink">
+        Belum Punya Akun?
+      </p>
+    </div>
+  </div>
+</AuthLayout>
+
+<script>
+  import { apiService } from '../lib/apiService';
+
+  const form = document.getElementById('loginForm');
+  const errorMsg = document.getElementById('errorMsg');
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const nim = (document.getElementById('nimInput') as HTMLInputElement).value;
+      const password = (document.getElementById('passwordInput') as HTMLInputElement).value;
+
+      if (errorMsg) errorMsg.style.display = 'none';
+
+      // Panggil API Login
+      const result = await apiService.login(nim, password);
+
+      if (result.success) {
+        // Simpan data user ke localStorage
+        localStorage.setItem('user', JSON.stringify(result.user));
+        
+        // Cek Role: Jika admin, arahkan ke dashboard admin
+        if (result.user.role === 'admin') {
+          window.location.href = '/admin/dashboard';
+        } else {
+          // Jika customer biasa, arahkan ke home
+          window.location.href = '/';
+        }
+      } else {
+        // Tampilkan pesan error
+        if (errorMsg) {
+          errorMsg.textContent = result.message || result.error || 'Login gagal, periksa NIM dan Password';
+          errorMsg.style.display = 'block';
+        }
+      }
+    });
+  }
+
+  const signupLink = document.getElementById('signupLink');
+  if (signupLink) {
+    signupLink.addEventListener('click', () => {
+      window.location.href = '/signup';
+    });
+  }
+</script>

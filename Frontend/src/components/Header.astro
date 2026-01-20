@@ -1,0 +1,61 @@
+---
+// Header.astro
+import '../css/header.css';
+
+interface Props {
+  isAdmin?: boolean;
+}
+
+const { isAdmin = false } = Astro.props;
+---
+
+<header class="header">
+  <div class="header-container">
+    <a href="/" class="logo">
+      <img src="/logo.png" alt="TUKO Logo" width="316" height="100" />
+    </a>
+    
+    <nav class="nav-menu">
+      {isAdmin ? (
+        <span class="admin-label">Admin</span>
+      ) : (
+        <div class="nav-links-wrapper">
+          <div class="nav-links">
+            <a href="/#product" class="nav-link menu-font">Tuko di Rumah</a>
+            <a href="/#menu" class="nav-link menu-font">Menu</a>
+            <a href="/#outlet" class="nav-link menu-font">Outlet</a>
+          </div>
+          <a href="/profile" class="profile-section">
+            <div class="profile-icon">
+              <i data-feather="user" style="color: white; width: 32px; height: 32px;"></i>
+            </div>
+            <span class="profile-name" id="headerProfileName">Tuko</span>
+          </a>
+        </div>
+      )}
+    </nav>
+  </div>
+</header>
+
+<script>
+  function updateHeaderName() {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        const nameElement = document.getElementById('headerProfileName');
+        if (nameElement) {
+          nameElement.textContent = user.name || user.id;
+        }
+      } catch (e) {
+        console.error("Error parsing user data:", e);
+      }
+    }
+  }
+
+  // Jalankan saat load
+  updateHeaderName();
+  
+  // Listen untuk perubahan storage (opsional jika login sukses)
+  window.addEventListener('storage', updateHeaderName);
+</script>

@@ -1,0 +1,232 @@
+---
+// Admin Products (Produk)
+import Layout from '../../layouts/Layout.astro';
+import { apiService } from '../../lib/apiService';
+import '../../css/admin.css';
+
+const products = await apiService.getAdminProducts() as any[];
+const categories = await apiService.getCategories() as any[];
+---
+
+<Layout title="Data Produk - TUKO Admin" isAdmin={true}>
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <nav class="admin-menu">
+        <a href="/admin/dashboard" class="menu-item">
+          <span>Beranda</span>
+        </a>
+        <a href="/admin/transaksi" class="menu-item">
+          <span>Transaksi</span>
+        </a>
+        <a href="/admin/kasir" class="menu-item">
+          <span>Kasir</span>
+        </a>
+        <a href="/admin/user" class="menu-item">
+          <span>Pengguna</span>
+        </a>
+        <a href="/admin/product" class="menu-item active">
+          <span>Produk</span>
+        </a>
+        <a href="/admin/kategori" class="menu-item">
+          <span>Kategori</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="/" class="logout-btn">
+          <span>Keluar</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <div class="admin-header">
+        <h1>Data Produk</h1>
+        <button class="btn-baru" onclick="openProductModal()">Baru</button>
+      </div>
+
+      <div class="transactions-section">
+        <div class="table-scroll-wrapper">
+          <div class="table-container">
+            <div class="table-header product-grid">
+              <div class="col-id">ID</div>
+              <div class="col-name">Nama Produk</div>
+              <div class="col-price">Harga</div>
+              <div class="col-category">Kategori</div>
+              <div class="col-stock">Stok</div>
+            </div>
+            
+            <div class="table-body">
+              {products.map((item: any) => (
+                <div 
+                  class="transaction-card product-grid" 
+                  data-item={JSON.stringify(item)}
+                  onclick="editProduct(event)"
+                >
+                  <div class="col-id">{item.PRODUCT_ID}</div>
+                  <div class="col-name">{item.PRODUCT_NAME}</div>
+                  <div class="col-price">Rp {parseFloat(item.PRICE).toLocaleString('id-ID')}</div>
+                  <div class="col-category">{item.CATEGORY || 'Uncategorized'}</div>
+                  <div class="col-stock">{item.STOCK || 0}</div>
+                </div>
+              ))}
+              {products.length === 0 && (
+                <div class="transaction-card empty product-grid">
+                  <span>Belum ada data produk</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Form -->
+  <div id="productFormModal" class="modal">
+    <div class="modal-content">
+      <form id="productForm">
+        <div class="form-row">
+          <label for="productId">ID</label>
+          <input type="text" id="productId" readonly />
+        </div>
+
+        <div class="form-row">
+          <label for="productName">Nama</label>
+          <input type="text" id="productName" required />
+        </div>
+
+        <div class="form-row">
+          <label for="price">Harga</label>
+          <input type="number" id="price" required min="0" />
+        </div>
+
+        <div class="form-row">
+          <label for="category">Kategori</label>
+          <select id="category" required>
+            <option value="">Pilih Kategori</option>
+            {categories.map((cat: any) => (
+              <option value={cat.CATEGORY_ID}>{cat.CATEGORY}</option>
+            ))}
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="stock">Stok</label>
+          <input type="number" id="stock" min="0" />
+        </div>
+
+        <div class="form-actions-centered">
+          <button type="submit" class="btn-green">Simpan</button>
+          <button type="button" class="btn-red" id="deleteProductBtn" onclick="deleteProduct()" disabled>Hapus</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script is:inline>
+    let currentProductId = null;
+
+    function openProductModal() {
+      const modal = document.getElementById('productFormModal');
+      const form = document.getElementById('productForm');
+      const deleteBtn = document.getElementById('deleteProductBtn');
+      
+      currentProductId = null;
+      form.reset();
+      document.getElementById('productId').value = '';
+      document.getElementById('productId').placeholder = 'Auto-Increment';
+      deleteBtn.disabled = true;
+      modal.classList.add('active');
+    }
+
+    function closeProductModal() {
+      const modal = document.getElementById('productFormModal');
+      modal.classList.remove('active');
+      document.getElementById('productId').placeholder = '';
+      currentProductId = null;
+    }
+
+    function editProduct(event) {
+      event.stopPropagation();
+      const product = JSON.parse(event.currentTarget.dataset.item);
+      currentProductId = product.PRODUCT_ID;
+      const deleteBtn = document.getElementById('deleteProductBtn');
+      
+      document.getElementById('productId').value = product.PRODUCT_ID;
+      document.getElementById('productName').value = product.PRODUCT_NAME || '';
+      document.getElementById('category').value = product.CATEGORY_ID || 'KP';
+      document.getElementById('price').value = parseInt(product.PRICE) || 0;
+      document.getElementById('stock').value = product.STOCK || 0;
+
+      deleteBtn.disabled = false;
+      const modal = document.getElementById('productFormModal');
+      modal.classList.add('active');
+    }
+
+    async function deleteProduct() {
+      if (!currentProductId) {
+        alert('Tidak ada data yang dipilih');
+        return;
+      }
+      if (!confirm('Yakin ingin menghapus produk ini?')) return;
+
+      try {
+        const response = await fetch(`http://127.0.0.1:5000/api/products/${currentProductId}`, {
+          method: 'DELETE',
+        });
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          alert('Gagal menghapus data');
+        }
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        alert('Terjadi kesalahan');
+      }
+    }
+
+    const form = document.getElementById('productForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = {
+        product_name: document.getElementById('productName').value,
+        category_id: document.getElementById('category').value,
+        price: document.getElementById('price').value,
+        stock: document.getElementById('stock').value,
+      };
+
+      try {
+        const baseUrl = 'http://127.0.0.1:5000/api/products';
+        const endpoint = currentProductId ? `${baseUrl}/${currentProductId}` : baseUrl;
+        const method = currentProductId ? 'PUT' : 'POST';
+
+        const response = await fetch(endpoint, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+
+        if (response.ok) {
+          closeProductModal();
+          window.location.reload();
+        } else {
+          alert('Gagal menyimpan data');
+        }
+      } catch (error) {
+        console.error('Error saving product:', error);
+        alert('Terjadi kesalahan');
+      }
+    });
+
+    // Close modal when clicking outside
+    const modal = document.getElementById('productFormModal');
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeProductModal();
+      }
+    });
+  </script>
+</Layout>

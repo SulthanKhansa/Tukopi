@@ -1,0 +1,109 @@
+---
+// Menu.astro
+import '../css/menu.css';
+---
+
+<section class="menu-tuko-section" id="menu">
+  <div class="menu-tuko-container">
+    <div class="menu-tuko-left">
+      <img src="/menu.png" alt="Menu Tuko" class="menu-image" />
+    </div>
+
+    <div class="menu-tuko-right">
+      <h2 class="menu-tuko-title">Menu Tuko</h2>
+
+      <div class="category-tabs">
+        <button class="category-btn active" data-category="white-milk">White-Milk</button>
+        <button class="category-btn" data-category="black">Black</button>
+        <button class="category-btn" data-category="non-coffee">Non-Coffee</button>
+      </div>
+
+      <!-- White-Milk Menu -->
+      <div class="menu-items" data-menu="white-milk" style="display: grid;">
+        <div class="menu-item">
+          <i data-feather="coffee" class="cup-icon"></i>
+          <span>Caramel</span>
+        </div>
+        <div class="menu-item">
+          <i data-feather="coffee" class="cup-icon"></i>
+          <span>Latte</span>
+        </div>
+        <div class="menu-item">
+          <i data-feather="coffee" class="cup-icon"></i>
+          <span>Cappucino</span>
+        </div>
+        <div class="menu-item">
+          <i data-feather="coffee" class="cup-icon"></i>
+          <span>Mocha</span>
+        </div>
+      </div>
+
+      <!-- Black Menu -->
+      <div class="menu-items" data-menu="black" style="display: none;">
+        <div class="menu-item">
+          <i data-feather="coffee" class="cup-icon"></i>
+          <span>Americano</span>
+        </div>
+        <div class="menu-item">
+          <i data-feather="coffee" class="cup-icon"></i>
+          <span>Espresso</span>
+        </div>
+        <div class="menu-item">
+          <i data-feather="coffee" class="cup-icon"></i>
+          <span>Filter</span>
+        </div>
+        <div class="menu-item">
+          <i data-feather="coffee" class="cup-icon"></i>
+          <span>Coldbrew</span>
+        </div>
+      </div>
+
+      <!-- Non-Coffee Menu -->
+      <div class="menu-items" data-menu="non-coffee" style="display: none;">
+        <div class="menu-item">
+          <i data-feather="coffee" class="cup-icon"></i>
+          <span>Chocolatte</span>
+        </div>
+        <div class="menu-item">
+          <i data-feather="coffee" class="cup-icon"></i>
+          <span>Milk</span>
+        </div>
+        <div class="menu-item">
+          <i data-feather="coffee" class="cup-icon"></i>
+          <span>Tea</span>
+        </div>
+        <div class="menu-item">
+          <i data-feather="coffee" class="cup-icon"></i>
+          <span>Lemonade</span>
+        </div>
+      </div>
+
+      <a href="#outlet" class="menu-tuko-btn">
+        <span>Menuju Tuko</span>
+        <span class="arrow">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll('.category-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Remove active class from all buttons
+      document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+      // Add active class to clicked button
+      (btn as HTMLElement).classList.add('active');
+      
+      // Hide all menu items
+      document.querySelectorAll('.menu-items').forEach(menu => {
+        (menu as HTMLElement).style.display = 'none';
+      });
+      // Show selected menu items
+      const category = (btn as HTMLElement & { dataset: DOMStringMap }).dataset.category;
+      const selectedMenu = document.querySelector(`[data-menu="${category}"]`) as HTMLElement;
+      if (selectedMenu) {
+        selectedMenu.style.display = 'grid';
+      }
+    });
+  });
+</script>

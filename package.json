@@ -1,14 +1,13 @@
 {
-  "name": "tukopi",
-  "type": "module",
-  "version": "0.0.1",
+  "name": "tukopi-root",
+  "version": "1.0.0",
+  "description": "Root of Tukopi Project",
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro"
+    "dev:frontend": "cd Frontend && npm run dev",
+    "dev:backend": "cd Backend && npm run dev",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\""
   },
-  "dependencies": {
-    "astro": "^5.16.9"
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }

@@ -1,0 +1,70 @@
+---
+// Product.astro
+import '../css/product.css';
+import ProductModal from './ProductModal.astro';
+---
+
+<section class="menu-section" id="product">
+  <div class="menu-container">
+    <div class="menu-left">
+      <div class="product-showcase">
+        <div class="showcase-item" data-id="1">
+          <img src="/kopi susu 1l.png" alt="Kopi Susu 1L" />
+          <div class="showcase-label">
+            <h3>Tuko di Rumah</h3>
+            <p>Kopi Susu Tetangga 1Liter</p>
+            <span class="price">Rp. 120.000</span>
+            <p class="description btn-quick-buy" style="cursor: pointer;">Beli Sekarang</p>
+          </div>
+        </div>
+
+        <div class="showcase-item" data-id="3">
+          <img src="/kopi hitam 1l.png" alt="Kopi Hitam 1L" />
+          <div class="showcase-label">
+            <h3>Tuko di Rumah</h3>
+            <p>Kopi Hitam Tetangga 1Liter</p>
+            <span class="price">Rp. 120.000</span>
+            <p class="description btn-quick-buy" style="cursor: pointer;">Beli Sekarang</p>
+          </div>
+        </div>
+
+        <div class="showcase-item" data-id="2">
+          <img src="/kopi susu 500ml.png" alt="Kopi Susu 500ml" />
+          <div class="showcase-label">
+            <h3>Tuko di Rumah</h3>
+            <p>Kopi Susu Tetangga 500ml</p>
+            <span class="price">Rp. 60.000</span>
+            <p class="description btn-quick-buy" style="cursor: pointer;">Beli Sekarang</p>
+          </div>
+        </div>
+
+        <button class="view-more-btn" onclick="window.location.href='/checkout'">Selengkapnya</button>
+      </div>
+    </div>
+
+    <div class="menu-right">
+      <img src="/product.png" alt="Product Showcase" class="product-showcase-image" />
+    </div>
+  </div>
+</section>
+
+<ProductModal />
+
+<script>
+  document.querySelectorAll('.btn-quick-buy').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const parent = (e.target as HTMLElement).closest('.showcase-item') as HTMLElement;
+      const productId = parent.dataset.id;
+      if (productId) {
+        const savedCart = localStorage.getItem('tuko-cart');
+        let cart: Record<string, number> = {};
+        if (savedCart) {
+          try { cart = JSON.parse(savedCart); } catch(e) {}
+        }
+        cart[productId] = (cart[productId] || 0) + 1;
+        localStorage.setItem('tuko-cart', JSON.stringify(cart));
+        window.location.href = '/checkout';
+      }
+    });
+  });
+</script>

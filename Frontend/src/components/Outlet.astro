@@ -1,0 +1,90 @@
+---
+// Outlet.astro
+import '../css/outlet.css';
+---
+
+<section class="outlet-section" id="outlet">
+  <div class="outlet-container">
+    <div class="outlet-carousel">
+      <div class="carousel-wrapper">
+        <div class="carousel-slide active" data-outlet="cibinong">
+          <img src="/cibinong.png" alt="Toko Kopi Tuko Cibinong" class="outlet-image" />
+        </div>
+        <div class="carousel-slide" data-outlet="bsd">
+          <img src="/bsd.png" alt="Toko Kopi Tuko BSD" class="outlet-image" />
+        </div>
+        <div class="carousel-slide" data-outlet="serpong">
+          <img src="/serpong.png" alt="Toko Kopi Tuko Serpong" class="outlet-image" />
+        </div>
+      </div>
+
+      <div class="carousel-navigation">
+        <button class="nav-btn prev-btn" id="prevBtn"><i data-feather="chevron-left"></i> Sebelumnya</button>
+        <button class="nav-btn next-btn" id="nextBtn">Selanjutnya <i data-feather="chevron-right"></i></button>
+      </div>
+    </div>
+
+    <div class="outlet-info">
+      <div class="outlet-name" id="outletName">Toko Kopi Tuko Cipete</div>
+      <div class="outlet-footer">
+        <div class="footer-item">
+          <a href="https://maps.app.goo.gl/aQcrpN7rbMd1ymvD6" id="outletMaps" target="_blank">
+            <h4>Petunjuk Tuko</h4>
+          </a>
+        </div>
+        <div class="footer-item">
+          <a href="https://maps.app.goo.gl/4CyUWUyBW7swtcG36" target="_blank">
+            <h4>Tuko Terdekat</h4>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const outlets = [
+    { id: 'cibinong', name: 'Toko Kopi Tuko Cipete', map: 'https://maps.app.goo.gl/aQcrpN7rbMd1ymvD6' },
+    { id: 'bsd', name: 'Toko Kopi Tuko BSD', map: 'https://maps.app.goo.gl/4CyUWUyBW7swtcG36' },
+    { id: 'serpong', name: 'Toko Kopi Tuko Serpong', map: 'https://maps.app.goo.gl/PjBn8mSoCnsbqeZg6' }
+  ];
+
+  let currentIndex = 0;
+
+  function updateCarousel() {
+    const slides = document.querySelectorAll('.carousel-slide');
+    slides.forEach((slide, index) => {
+      slide.classList.remove('active');
+      if (index === currentIndex) {
+        slide.classList.add('active');
+      }
+    });
+
+    const outletName = document.getElementById('outletName') as HTMLElement | null;
+    const outletMaps = document.getElementById('outletMaps') as HTMLAnchorElement | null;
+    
+    if (outletName) {
+      outletName.textContent = outlets[currentIndex].name;
+    }
+    if (outletMaps) {
+      outletMaps.href = outlets[currentIndex].map;
+    }
+  }
+
+  const nextBtn = document.getElementById('nextBtn') as HTMLElement | null;
+  const prevBtn = document.getElementById('prevBtn') as HTMLElement | null;
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      currentIndex = (currentIndex + 1) % outlets.length;
+      updateCarousel();
+    });
+  }
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      currentIndex = (currentIndex - 1 + outlets.length) % outlets.length;
+      updateCarousel();
+    });
+  }
+</script>

@@ -1,0 +1,94 @@
+---
+import AuthLayout from '../layouts/AuthLayout.astro';
+import '../css/auth.css';
+---
+
+<AuthLayout title="Daftar - TUKO">
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="logo">
+        <img src="/tuko.png" alt="TUKO Logo" />
+      </div>
+      
+      <p class="disclaimer">
+        By clicking "Daftar" you agree to our Terms of Use and acknowledge that your information will be used as described in our Privacy Policy.
+      </p>
+
+      <form id="signupForm">
+        <div class="input-wrapper">
+          <i data-feather="user" class="input-icon"></i>
+          <input type="text" id="idInput" placeholder="ID / NIM" required />
+        </div>
+        <div class="input-wrapper">
+          <i data-feather="info" class="input-icon"></i>
+          <input type="text" id="nameInput" placeholder="Nama Lengkap" required />
+        </div>
+        <div class="input-wrapper">
+          <i data-feather="mail" class="input-icon"></i>
+          <input type="email" id="emailInput" placeholder="Email" required />
+        </div>
+        <div class="input-wrapper">
+          <i data-feather="lock" class="input-icon"></i>
+          <input type="password" id="passwordInput" placeholder="Password" required />
+        </div>
+        <button type="submit" class="btn-auth">Daftar</button>
+        <p id="errorMsg" style="color: #ff4d4d; font-size: 14px; margin-top: 10px; text-align: center; display: none;"></p>
+        <p id="successMsg" style="color: #48bb78; font-size: 14px; margin-top: 10px; text-align: center; display: none;"></p>
+      </form>
+
+      <p class="auth-redirect-link" id="loginLink">
+        Sudah Punya Akun?
+      </p>
+    </div>
+  </div>
+</AuthLayout>
+
+<script>
+  import { apiService } from '../lib/apiService';
+
+  const form = document.getElementById('signupForm');
+  const errorMsg = document.getElementById('errorMsg');
+  const successMsg = document.getElementById('successMsg');
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const id = (document.getElementById('idInput') as HTMLInputElement).value;
+      const name = (document.getElementById('nameInput') as HTMLInputElement).value;
+      const email = (document.getElementById('emailInput') as HTMLInputElement).value;
+      const password = (document.getElementById('passwordInput') as HTMLInputElement).value;
+
+      if (errorMsg) errorMsg.style.display = 'none';
+      if (successMsg) successMsg.style.display = 'none';
+
+      // Panggil API Register
+      const result = await apiService.register(id, name, email, password);
+
+      if (result.success) {
+        if (successMsg) {
+          successMsg.textContent = result.message || 'Registrasi Berhasil! Mengalihkan...';
+          successMsg.style.display = 'block';
+        }
+        // Tunggu sebentar lalu ke login
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
+      } else {
+        if (errorMsg) {
+          errorMsg.textContent = result.message || 'Registrasi gagal';
+          errorMsg.style.display = 'block';
+        }
+      }
+    });
+  }
+
+  const loginLink = document.getElementById('loginLink');
+  if (loginLink) {
+    loginLink.addEventListener('click', () => {
+      window.location.href = '/login';
+    });
+  }
+</script>
+
+

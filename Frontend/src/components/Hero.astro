@@ -1,0 +1,22 @@
+---
+// Hero.astro
+import '../css/hero.css';
+import type { ImageMetadata } from 'astro';
+---
+
+<section class="hero" id="hero">
+  <div class="hero-container">
+    <div class="hero-content">
+      <h1 class="hero-title">TUKO Dulu, <br />Baru Kerja</h1>
+      <p class="hero-description">
+        Jangan paksa otakmu jalan tanpa asupan yang benar.<br />
+        Segelas TUKO bikin ide ngalir dan mood jadi asik seharian.
+      </p>
+      <a href="#product" class="cta-button">Ambil Tuko</a>
+    </div>
+    
+    <div class="hero-image">
+      <img src="/header.png" alt="TUKO Products" />
+    </div>
+  </div>
+</section>

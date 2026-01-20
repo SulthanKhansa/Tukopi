@@ -1,0 +1,405 @@
+/* Global Styles for Admin */
+.admin-container {
+  display: block;
+  min-height: calc(100vh - 100px);
+  width: 100%;
+  margin: 0;
+  position: relative;
+}
+
+/* Sidebar */
+.admin-sidebar {
+  background-color: #c1b08e; /* Warna Beige/Emas sesuai gambar */
+  padding: 20px 15px;
+  position: fixed;
+  top: 100px;
+  left: 0;
+  width: 280px;
+  height: calc(100vh - 100px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  z-index: 50;
+}
+
+.admin-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Teks di tengah sesuai gambar */
+  padding: 10px 15px;
+  background-color: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1); /* Border tipis sesuai gambar */
+  border-radius: 12px;
+  text-decoration: none;
+  color: #fff;
+  font-family: "Jua", sans-serif;
+  font-size: 18px;
+  transition: all 0.2s ease;
+}
+
+.menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.menu-item.active {
+  background-color: #ffb84c; /* Warna Orange sesuai gambar */
+  color: #000;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-color: #ffb84c;
+}
+
+.menu-item :global(svg) {
+  width: 20px;
+  height: 20px;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px;
+  background-color: #ff4d4d;
+  color: white;
+  text-decoration: none;
+  border-radius: 12px;
+  font-family: "Jua", sans-serif;
+  font-size: 18px;
+  transition: background 0.3s;
+}
+
+.logout-btn:hover {
+  background-color: #e60000;
+}
+
+/* Main Content */
+.admin-main {
+  background-color: #f5f5f5; /* Light gray background */
+  padding: 40px;
+  font-family: "Inclusive Sans", sans-serif;
+  margin-left: 280px; /* Memberikan ruang untuk sidebar yang fixed */
+  min-height: calc(100vh - 100px);
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.admin-header h1 {
+  font-family: "Inclusive Sans", sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: #4a4a4a;
+  margin: 0;
+}
+
+/* Stats Cards */
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+  margin-bottom: 40px;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 25px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eee;
+}
+
+.stat-icon {
+  width: 54px;
+  height: 54px;
+  background-color: #f8f9fa;
+  color: #ffb84c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+
+.stat-icon :global(svg) {
+  width: 28px;
+  height: 28px;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-number {
+  font-size: 26px;
+  font-weight: 800;
+  color: #000;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #888;
+}
+
+.section-divider {
+  border: none;
+  border-top: 2px solid #eee;
+  margin: 40px 0;
+}
+
+/* Transactions Table */
+.section-title {
+  margin: 0 0 20px 0;
+  font-size: 22px;
+  font-family: "Jua", sans-serif;
+  color: #4a4a4a;
+}
+
+.table-scroll-wrapper {
+  overflow: auto;
+  max-height: 600px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eee;
+}
+
+.table-container {
+  display: inline-block;
+  min-width: 100%;
+  background-color: #fff;
+}
+
+.table-header {
+  background-color: #888; /* Header abu-abu sesuai gambar */
+  color: #000;
+  border-bottom: 2px solid #eee;
+  display: grid;
+  padding: 15px 25px;
+  font-family: "Inclusive Sans", sans-serif;
+  font-size: 14px;
+  text-align: center;
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  min-width: 100%;
+  width: max-content;
+}
+
+.transaction-card {
+  background-color: #fff;
+  display: grid;
+  padding: 18px 25px;
+  border-bottom: 1px solid #f0f0f0;
+  font-family: "Inclusive Sans", sans-serif;
+  font-size: 14px;
+  color: #000;
+  text-align: center;
+  transition: background 0.2s;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 10px;
+  border-radius: 8px;
+  min-width: 100%;
+  width: max-content;
+}
+
+.transaction-card:hover {
+  background-color: #fffbf5;
+  cursor: pointer;
+}
+
+.transaction-card:last-child {
+  border-bottom: none;
+  border-radius: 0 0 12px 12px;
+}
+
+.transaction-card.empty {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+  color: #999;
+}
+
+.col-id {
+  font-weight: 700;
+}
+.col-total {
+  font-weight: 700;
+  color: #000;
+}
+
+.btn-baru {
+  padding: 10px 25px;
+  font-size: 14px;
+  font-weight: 600;
+  background-color: #ffb84c;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+}
+
+.btn-baru:hover {
+  background-color: #ffa726;
+  transform: translateY(-1px);
+}
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal.active {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 12px;
+  width: 95%;
+  max-width: 450px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  gap: 15px;
+}
+
+.form-row label {
+  flex: 0 0 120px;
+  font-size: 14px;
+  color: #333;
+  font-weight: 600;
+}
+
+.form-row input,
+.form-row select {
+  flex: 1;
+  padding: 10px 12px;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  font-family: inherit;
+}
+
+.form-actions-centered {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.btn-green {
+  background-color: #2ecc71;
+  color: #fff;
+  border: none;
+  padding: 12px 50px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
+  transition: transform 0.2s;
+}
+
+.btn-green:hover {
+  transform: translateY(-2px);
+  background-color: #27ae60;
+}
+
+.btn-red {
+  background-color: #e74c3c;
+  color: #fff;
+  border: none;
+  padding: 12px 50px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+  transition: transform 0.2s;
+}
+
+.btn-red:hover {
+  transform: translateY(-2px);
+  background-color: #c0392b;
+}
+
+.btn-red:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Specific Table Column Configs */
+.dashboard-grid {
+  grid-template-columns: 80px 150px 180px 150px 140px 180px 120px 150px;
+}
+
+.kasir-grid {
+  grid-template-columns: 80px 150px 180px 250px 150px 150px 150px 200px 120px;
+}
+
+.user-grid {
+  grid-template-columns: 80px 180px 250px 150px 150px 150px 200px 120px;
+}
+
+.product-grid {
+  grid-template-columns: 100px 1fr 180px 180px 120px;
+}
+
+.category-grid {
+  grid-template-columns: 180px 1fr;
+}
+
+@media (max-width: 1024px) {
+  .admin-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  .admin-main {
+    margin-left: 0;
+  }
+}

@@ -1,0 +1,348 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { apiService } from '../lib/apiService';
+import '../css/profile.css';
+
+// Data fetching will be handled on the client side to use localStorage
+---
+
+<Layout title="Profile - TUKO">
+  <div class="profile-page-container">
+    <div class="content-wrapper">
+      <!-- Back Button -->
+      <a href="/" class="back-link">
+        <i data-feather="chevron-left"></i>
+        <span>Kembali</span>
+      </a>
+
+      <div class="main-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar-card">
+          <nav class="sidebar-menu">
+            <a href="/profile" class="sidebar-item active" id="profileTab">
+              <i data-feather="user"></i>
+              <span>Profil</span>
+            </a>
+            <a href="/profile?view=history" class="sidebar-item" id="historyLink">
+              <i data-feather="refresh-cw"></i>
+              <span>Histori Transaksi</span>
+            </a>
+            <a href="/login" class="sidebar-item logout-item" id="logoutBtn">
+              <i data-feather="log-out"></i>
+              <span>Keluar</span>
+            </a>
+          </nav>
+        </aside>
+
+        <!-- Profile Form Card -->
+        <main class="form-card">
+          <!-- Profile Section -->
+          <div id="profileSection">
+          <form id="profileForm">
+            <div class="form-header">
+              <div class="avatar-section">
+                <div class="avatar-placeholder">
+                  <i data-feather="user"></i>
+                </div>
+              </div>
+              <div class="header-inputs">
+                <div class="input-group">
+                  <label>ID / NIM</label>
+                  <input type="text" id="prof_id" readonly class="readonly-input" />
+                </div>
+                <div class="input-group">
+                  <label>Nama Lengkap</label>
+                  <input type="text" id="prof_name" placeholder="Nama Lengkap" />
+                </div>
+                <div class="input-group">
+                  <label>Email</label>
+                  <input type="email" id="prof_email" placeholder="Email" />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="grid-left">
+                <div class="input-group">
+                  <label>Password</label>
+                  <input type="password" id="prof_password" placeholder="Password" value="********" readonly />
+                </div>
+                <div class="input-group">
+                  <label>Tempat Lahir</label>
+                  <input type="text" id="prof_pob" placeholder="Tempat Lahir" />
+                </div>
+                <div class="input-group">
+                  <label>Tanggal Lahir</label>
+                  <input type="date" id="prof_dob" />
+                </div>
+                <div class="input-group">
+                  <label>Gender</label>
+                  <div class="gender-options">
+                    <label class="radio-label">
+                      <input type="radio" name="gender" value="L" id="genderL" />
+                      <span class="radio-custom"></span>
+                      Laki-laki
+                    </label>
+                    <label class="radio-label">
+                      <input type="radio" name="gender" value="P" id="genderP" />
+                      <span class="radio-custom"></span>
+                      Perempuan
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid-right">
+                <div class="input-group">
+                  <label>Alamat</label>
+                  <textarea id="prof_address" placeholder="Alamat lengkap..." rows="5"></textarea>
+                </div>
+                <div class="input-group">
+                  <label>Kontak</label>
+                  <input type="tel" id="prof_contact" placeholder="Nomor Telepon" />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-footer">
+              <button type="submit" class="btn-simpan">Simpan</button>
+            </div>
+          </form>
+          </div>
+
+          <!-- History Section -->
+          <div id="historySection" style="display: none;">
+            <div class="history-header">
+              <h2>Histori Transaksi</h2>
+            </div>
+            <div class="table-wrapper">
+              <table class="transaction-table">
+                <thead>
+                  <tr>
+                    <th>ID Transaksi</th>
+                    <th>Tanggal</th>
+                    <th>Total Pembayaran</th>
+                    <th>Metode Pembayaran</th>
+                  </tr>
+                </thead>
+                <tbody id="transactionBody">
+                  <!-- Will be populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { apiService } from '../lib/apiService';
+
+  async function initProfile() {
+    console.log("Memulai inisialisasi profil...");
+    // 1. Ambil data user dari localStorage
+    const savedUser = localStorage.getItem('user');
+    console.log("Data di localStorage:", savedUser);
+    
+    if (!savedUser) {
+      console.log("Tidak ada user di localStorage, redirect ke login");
+      window.location.href = '/login';
+      return;
+    }
+
+    const user = JSON.parse(savedUser);
+    const nim = user.id;
+    const role = user.role;
+    console.log("User detected:", { nim, role });
+
+    // Jika admin/staff, mungkin tidak ada di tabel customers
+    if (role === 'admin' && nim === 'admin') {
+      const idField = document.getElementById('prof_id') as HTMLInputElement;
+      const nameField = document.getElementById('prof_name') as HTMLInputElement;
+      const emailField = document.getElementById('prof_email') as HTMLInputElement;
+      if (idField) idField.value = user.id;
+      if (nameField) nameField.value = user.name;
+      if (emailField) emailField.value = user.email;
+      
+      const tbody = document.getElementById('transactionBody');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999;">Gunakan menu Dashboard untuk melihat transaksi</td></tr>';
+      return;
+    }
+
+    // 2. Ambil detail lengkap dari Database via API
+    try {
+      const data = await apiService.getCustomerById(nim);
+      console.log("Data customer dari API:", data);
+      
+      if (data && data.CUST_ID) {
+        // 3. Isi form dengan data asli
+        const idField = document.getElementById('prof_id') as HTMLInputElement;
+        const nameField = document.getElementById('prof_name') as HTMLInputElement;
+        const emailField = document.getElementById('prof_email') as HTMLInputElement;
+        const pobField = document.getElementById('prof_pob') as HTMLInputElement;
+        const contactField = document.getElementById('prof_contact') as HTMLInputElement;
+        const addressField = document.getElementById('prof_address') as HTMLTextAreaElement;
+        const dobField = document.getElementById('prof_dob') as HTMLInputElement;
+
+        if (idField) idField.value = data.CUST_ID || '';
+        if (nameField) nameField.value = data.CUST_NAME || '';
+        if (emailField) emailField.value = data.EMAIL || '';
+        if (pobField) pobField.value = data.PLACE_OF_BIRTH || '';
+        if (contactField) contactField.value = data.CONTACT_NUMBER || '';
+        if (addressField) addressField.value = data.ADDRESS || '';
+        
+        if (data.DATE_OF_BIRTH && dobField) {
+          const d = new Date(data.DATE_OF_BIRTH);
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          dobField.value = `${year}-${month}-${day}`;
+        }
+
+        if (data.GENDER_ID === 'L') {
+          const radioL = document.getElementById('genderL') as HTMLInputElement;
+          if (radioL) radioL.checked = true;
+        } else if (data.GENDER_ID === 'P') {
+          const radioP = document.getElementById('genderP') as HTMLInputElement;
+          if (radioP) radioP.checked = true;
+        }
+      } else {
+        console.warn("Data customer tidak ditemukan atau gagal fetch");
+      }
+    } catch (err) {
+      console.error("Gagal memanggil API getCustomerById:", err);
+    }
+
+    // 4. Ambil Histori Transaksi
+    try {
+      const historyData = await apiService.getCustomerOrders(nim);
+      console.log("Data Histori:", historyData);
+      const tbody = document.getElementById('transactionBody');
+      
+      if (tbody && historyData) {
+        if (historyData.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999;">Belum ada transaksi</td></tr>';
+        } else {
+          tbody.innerHTML = historyData.map((tr: any) => {
+            const date = new Date(tr.ORDER_DATE).toLocaleDateString('id-ID', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            });
+            const total = new Intl.NumberFormat('id-ID', {
+              style: 'currency',
+              currency: 'IDR',
+              minimumFractionDigits: 0
+            }).format(tr.TOTAL);
+
+            return `
+              <tr>
+                <td>#${tr.ORDER_ID}</td>
+                <td>${date}</td>
+                <td>${total}</td>
+                <td><span class="payment-badge">${tr.METODE_PEMBAYARAN || 'Tunai'}</span></td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+    } catch (err) {
+      console.error("Gagal mengambil histori:", err);
+    }
+  }
+
+  async function setupProfileForm() {
+    const form = document.getElementById('profileForm') as HTMLFormElement;
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return;
+      const user = JSON.parse(userStr);
+      const id = user.id;
+
+      const formData = {
+        cust_name: (document.getElementById('prof_name') as HTMLInputElement).value,
+        email: (document.getElementById('prof_email') as HTMLInputElement).value,
+        place_of_birth: (document.getElementById('prof_pob') as HTMLInputElement).value,
+        date_of_birth: (document.getElementById('prof_dob') as HTMLInputElement).value,
+        contact_number: (document.getElementById('prof_contact') as HTMLInputElement).value,
+        address: (document.getElementById('prof_address') as HTMLTextAreaElement).value,
+        gender_id: (document.querySelector('input[name="gender"]:checked') as HTMLInputElement)?.value || ''
+      };
+
+      try {
+        const res = await apiService.updateCustomer(id, formData);
+        if (res && (res.message?.includes('Berhasil') || res.success)) {
+          alert('Profil berhasil diperbarui!');
+          // Update local name if needed
+          user.name = formData.cust_name;
+          localStorage.setItem('user', JSON.stringify(user));
+        } else {
+          alert('Gagal update: ' + (res?.message || 'Unknown error'));
+        }
+      } catch (err) {
+        console.error("Save profile error:", err);
+        alert('Terjadi kesalahan saat menyimpan data.');
+      }
+    });
+  }
+
+  // Handle logout
+  const logoutBtn = document.getElementById('logoutBtn');
+  logoutBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  });
+
+  // Handle view switching
+  function setupProfileViewSwitching() {
+    const profileSection = document.getElementById('profileSection');
+    const historySection = document.getElementById('historySection');
+    const profileTab = document.getElementById('profileTab');
+    const historyLink = document.getElementById('historyLink');
+
+    if (!profileSection || !historySection || !profileTab || !historyLink) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const view = params.get('view');
+
+    if (view === 'history') {
+      profileSection.style.display = 'none';
+      historySection.style.display = 'block';
+      profileTab.classList.remove('active');
+      historyLink.classList.add('active');
+    }
+
+    profileTab.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.history.pushState({}, '', '/profile');
+      profileSection.style.display = 'block';
+      historySection.style.display = 'none';
+      profileTab.classList.add('active');
+      historyLink.classList.remove('active');
+    });
+
+    historyLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.history.pushState({}, '', '/profile?view=history');
+      profileSection.style.display = 'none';
+      historySection.style.display = 'block';
+      profileTab.classList.remove('active');
+      historyLink.classList.add('active');
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initProfile();
+    setupProfileForm();
+    setupProfileViewSwitching();
+    // @ts-ignore
+    if (window.feather) { window.feather.replace(); }
+  });
+</script>

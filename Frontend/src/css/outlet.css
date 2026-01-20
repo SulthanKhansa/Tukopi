@@ -1,0 +1,175 @@
+.outlet-section {
+  background-color: #ffffff;
+  padding: 80px 0;
+  scroll-margin-top: 66px;
+}
+
+.outlet-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 44px;
+}
+
+.outlet-carousel {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.carousel-wrapper {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0;
+  width: 100%;
+  height: 500px;
+  background-color: #ffffff;
+  position: relative;
+}
+
+.carousel-slide {
+  position: absolute;
+  grid-column: 2 / 6;
+  width: 90%;
+  height: 100%;
+  left: 5%;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+}
+
+.carousel-slide.active {
+  opacity: 1;
+}
+
+.outlet-image {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.carousel-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-btn {
+  background-color: transparent;
+  border: none;
+  font-size: 32px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: "Jersey 25", cursive;
+  color: #000;
+  padding: 10px 20px;
+  transition: opacity 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-btn svg {
+  width: 32px;
+  height: 32px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+.nav-btn:hover {
+  opacity: 0.7;
+}
+
+.outlet-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 2px solid #000;
+  padding: 0;
+}
+
+.outlet-name {
+  font-family: "Jersey 25", cursive;
+  font-size: 36px;
+  font-weight: 400;
+  color: #000;
+  text-align: center;
+  padding: 14px 16px;
+}
+
+.outlet-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-top: 2px solid #000;
+  background-color: #000;
+}
+
+.footer-item {
+  padding: 0;
+  text-align: center;
+  border-right: 2px solid #fff;
+}
+
+.footer-item a {
+  text-decoration: none;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.footer-item:last-child {
+  border-right: none;
+}
+
+.footer-item h4 {
+  font-family: "Jersey 25", cursive;
+  font-size: 20px;
+  font-weight: 400;
+  color: #ffffff;
+  margin: 0;
+  text-decoration: underline;
+  background-color: #000;
+  padding: 12px 0;
+  display: block;
+}
+
+@media (max-width: 1024px) {
+  .outlet-container {
+    padding: 0 30px;
+  }
+
+  .carousel-wrapper {
+    height: 300px;
+  }
+
+  .outlet-name {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .outlet-section {
+    padding: 30px 0;
+  }
+
+  .outlet-container {
+    padding: 0 20px;
+  }
+
+  .carousel-wrapper {
+    height: 250px;
+  }
+
+  .outlet-name {
+    font-size: 20px;
+  }
+
+  .nav-btn {
+    font-size: 14px;
+  }
+}

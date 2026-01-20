@@ -1,0 +1,126 @@
+---
+// ProductModal.astro
+import '../css/product-modal.css';
+---
+
+<div id="product-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-left">
+      <img id="modal-image" src="" alt="Product" />
+    </div>
+    <div class="modal-right">
+      <h2 id="modal-title">Tuko di Rumah</h2>
+      <h3 id="modal-product-name">Kopi Susu Tetangga 1Liter</h3>
+      <div class="modal-price" id="modal-price">Rp. 120.000</div>
+      
+      <div class="modal-description" id="modal-description">
+        <p>Tuko di Rumah adalah produk minuman Toko Kopi Tuko dalam botol 1 Liter yang dapat dinikmati bersama keluarga atau teman dekat. Dibuat dengan biji kopi full arabica. Tetangga Blend.</p>
+        
+        <p>Melihat #tetanggatuko yang punya kebiasaan nyetok kopi untuk akhir pekan, kali ini Toko Kopi Tuko menyediakan produk dalam ukuran besar, Tuko di Rumah</p>
+        
+        <p>Jangan lupa untuk menyertakan catatan penjual NORMAL / NO SUGAR untuk pilihan Tuko di Rumah kopi Susu Tetangga ya #TetanggaTuko.</p>
+      </div>
+
+      <button class="beli-sekarang-btn" id="btn-beli-modal">Beli Sekarang</button>
+    </div>
+    <button class="modal-close" id="close-modal"><i data-feather="x"></i></button>
+  </div>
+</div>
+
+<script>
+  const productData = {
+    '/kopi susu 1l.png': {
+      id: 1,
+      title: 'Tuko di Rumah',
+      name: 'Kopi Susu Tetangga 1Liter',
+      price: 'Rp. 120.000',
+      description: '<p>Tuko di Rumah adalah produk minuman Toko Kopi Tuko dalam botol 1 Liter yang dapat dinikmati bersama keluarga atau teman dekat. Dibuat dengan biji kopi full arabica. Tetangga Blend.</p><p>Melihat #tetanggatuko yang punya kebiasaan nyetok kopi untuk akhir pekan, kali ini Toko Kopi Tuko menyediakan produk dalam ukuran besar, Tuko di Rumah</p><p>Jangan lupa untuk menyertakan catatan penjual NORMAL / NO SUGAR untuk pilihan Tuko di Rumah kopi Susu Tetangga ya #TetanggaTuko.</p>'
+    },
+    '/kopi hitam 1l.png': {
+      id: 3,
+      title: 'Tuko di Rumah',
+      name: 'Kopi Hitam Tetangga 1Liter',
+      price: 'Rp. 120.000',
+      description: '<p>Tuko di Rumah adalah produk minuman Toko Kopi Tuko dalam botol 1 Liter yang dapat dinikmati bersama keluarga atau teman dekat. Dibuat dengan biji kopi full arabica. Tetangga Blend.</p><p>Melihat #tetanggatuko yang punya kebiasaan nyetok kopi untuk akhir pekan, kali ini Toko Kopi Tuko menyediakan produk dalam ukuran besar, Tuko di Rumah</p><p>Jangan lupa untuk menyertakan catatan penjual NORMAL / NO SUGAR untuk pilihan Tuko di Rumah kopi Hitam Tetangga ya #TetanggaTuko.</p>'
+    },
+    '/kopi susu 500ml.png': {
+      id: 2,
+      title: 'Tuko di Rumah',
+      name: 'Kopi Susu Tetangga 500ml',
+      price: 'Rp. 60.000',
+      description: '<p>Tuko di Rumah adalah produk minuman Toko Kopi Tuko dalam botol 500ml yang dapat dinikmati bersama keluarga atau teman dekat. Dibuat dengan biji kopi full arabica. Tetangga Blend.</p><p>Melihat #tetanggatuko yang punya kebiasaan nyetok kopi untuk akhir pekan, kali ini Toko Kopi Tuko menyediakan produk dalam ukuran praktis, Tuko di Rumah</p><p>Jangan lupa untuk menyertakan catatan penjual NORMAL / NO SUGAR untuk pilihan Tuko di Rumah kopi Susu Tetangga ya #TetanggaTuko.</p>'
+    }
+  };
+
+  let currentProductId: number | null = null;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('product-modal') as HTMLElement | null;
+    const closeBtn = document.querySelector('.modal-close') as HTMLButtonElement | null;
+    const btnBeli = document.getElementById('btn-beli-modal') as HTMLButtonElement | null;
+    
+    // Close modal when X button clicked
+    closeBtn?.addEventListener('click', () => {
+      modal?.classList.remove('active');
+    });
+
+    // Beli Sekarang Logic
+    btnBeli?.addEventListener('click', () => {
+      if (currentProductId) {
+        // Ambil cart yang ada
+        const savedCart = localStorage.getItem('tuko-cart');
+        let cart: Record<number, number> = {};
+        if (savedCart) {
+          try {
+            cart = JSON.parse(savedCart);
+          } catch (e) {
+            cart = {};
+          }
+        }
+        
+        // Tambah produk ke cart (tambah 1 jika sudah ada)
+        cart[currentProductId] = (cart[currentProductId] || 0) + 1;
+        
+        // Simpan kembali
+        localStorage.setItem('tuko-cart', JSON.stringify(cart));
+        
+        // Redirect
+        window.location.href = '/checkout';
+      }
+    });
+
+    // Close modal when overlay clicked (outside content)
+    modal?.addEventListener('click', (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target === modal) {
+        modal.classList.remove('active');
+      }
+    });
+
+    // Add click listeners to product images
+    document.querySelectorAll('.showcase-item img').forEach((img) => {
+      const imgElement = img as HTMLImageElement;
+      imgElement.style.cursor = 'pointer';
+      imgElement.addEventListener('click', () => {
+        const src = imgElement.getAttribute('src');
+        if (src && productData[src as keyof typeof productData]) {
+          const product = productData[src as keyof typeof productData];
+          currentProductId = product.id; // Simpan ID produk yang sedang dilihat
+
+          const modalImage = document.getElementById('modal-image') as HTMLImageElement | null;
+          const modalTitle = document.getElementById('modal-title') as HTMLElement | null;
+          const modalProductName = document.getElementById('modal-product-name') as HTMLElement | null;
+          const modalPrice = document.getElementById('modal-price') as HTMLElement | null;
+          const modalDescription = document.getElementById('modal-description') as HTMLElement | null;
+          
+          if (modalImage) modalImage.src = src;
+          if (modalTitle) modalTitle.textContent = product.title;
+          if (modalProductName) modalProductName.textContent = product.name;
+          if (modalPrice) modalPrice.textContent = product.price;
+          if (modalDescription) modalDescription.innerHTML = product.description;
+          if (modal) modal.classList.add('active');
+        }
+      });
+    });
+  });
+</script>

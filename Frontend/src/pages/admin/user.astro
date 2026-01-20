@@ -1,0 +1,258 @@
+---
+// Admin Customers (Pengguna)
+import Layout from '../../layouts/Layout.astro';
+import { apiService } from '../../lib/apiService';
+import '../../css/admin.css';
+
+const customers = await apiService.getAdminCustomers() as any[];
+---
+
+<Layout title="Data Pengguna - TUKO Admin" isAdmin={true}>
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <nav class="admin-menu">
+        <a href="/admin/dashboard" class="menu-item">
+          <span>Beranda</span>
+        </a>
+        <a href="/admin/transaksi" class="menu-item">
+          <span>Transaksi</span>
+        </a>
+        <a href="/admin/kasir" class="menu-item">
+          <span>Kasir</span>
+        </a>
+        <a href="/admin/user" class="menu-item active">
+          <span>Pengguna</span>
+        </a>
+        <a href="/admin/product" class="menu-item">
+          <span>Produk</span>
+        </a>
+        <a href="/admin/kategori" class="menu-item">
+          <span>Kategori</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="/" class="logout-btn">
+          <span>Keluar</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <div class="admin-header">
+        <h1>Data Pengguna</h1>
+        <button class="btn-baru" onclick="openUserModal()">Baru</button>
+      </div>
+
+      <div class="transactions-section">
+        <div class="table-scroll-wrapper">
+          <div class="table-container">
+            <div class="table-header user-grid">
+              <div class="col-id">ID</div>
+              <div class="col-name">Nama</div>
+              <div class="col-address">Alamat</div>
+              <div class="col-pob">Tempat Lahir</div>
+              <div class="col-dob">Tgl Lahir</div>
+              <div class="col-contact">Kontak</div>
+              <div class="col-email">Email</div>
+              <div class="col-gender">Gender</div>
+            </div>
+            
+            <div class="table-body">
+              {customers.map((item: any) => (
+                <div 
+                  class="transaction-card user-grid" 
+                  data-item={JSON.stringify(item)}
+                  onclick="editCustomer(event)"
+                >
+                  <div class="col-id">{item.CUST_ID}</div>
+                  <div class="col-name">{item.CUST_NAME}</div>
+                  <div class="col-address">{item.ADDRESS}</div>
+                  <div class="col-pob">{item.PLACE_OF_BIRTH}</div>
+                  <div class="col-dob">{item.DATE_OF_BIRTH ? new Date(item.DATE_OF_BIRTH).toLocaleDateString('id-ID') : '-'}</div>
+                  <div class="col-contact">{item.CONTACT_NUMBER}</div>
+                  <div class="col-email">{item.EMAIL}</div>
+                  <div class="col-gender">{item.GENDER_ID === 'L' ? 'Laki-Laki' : 'Perempuan'}</div>
+                </div>
+              ))}
+              {customers.length === 0 && (
+                <div class="transaction-card empty user-grid">
+                  <span>Belum ada data pengguna</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Form -->
+  <div id="userFormModal" class="modal">
+    <div class="modal-content">
+      <form id="userForm">
+        <div class="form-row">
+          <label for="userId">ID</label>
+          <input type="text" id="userId" readonly />
+        </div>
+
+        <div class="form-row">
+          <label for="fullName">Nama</label>
+          <input type="text" id="fullName" required />
+        </div>
+
+        <div class="form-row">
+          <label for="address">Alamat</label>
+          <input type="text" id="address" required />
+        </div>
+
+        <div class="form-row">
+          <label for="pob">Tempat Lahir</label>
+          <input type="text" id="pob" required />
+        </div>
+
+        <div class="form-row">
+          <label for="dob">Tanggal Lahir</label>
+          <input type="date" id="dob" required />
+        </div>
+
+        <div class="form-row">
+          <label for="contact">Kontak</label>
+          <input type="tel" id="contact" required />
+        </div>
+
+        <div class="form-row">
+          <label for="email">Email</label>
+          <input type="email" id="email" required />
+        </div>
+
+        <div class="form-row">
+          <label for="gender">Jenis Kelamin</label>
+          <select id="gender" required>
+            <option value="L">Laki-Laki</option>
+            <option value="P">Perempuan</option>
+          </select>
+        </div>
+
+        <div class="form-actions-centered">
+          <button type="submit" class="btn-green">Simpan</button>
+          <button type="button" class="btn-red" id="deleteUserBtn" onclick="deleteCustomer()" disabled>Hapus</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script is:inline>
+    let currentCustomerId = null;
+
+    function openUserModal() {
+      const modal = document.getElementById('userFormModal');
+      const form = document.getElementById('userForm');
+      const deleteBtn = document.getElementById('deleteUserBtn');
+      
+      currentCustomerId = null;
+      form.reset();
+      document.getElementById('userId').value = '';
+      document.getElementById('userId').readOnly = false; // Biarkan admin mengisi NIM
+      deleteBtn.disabled = true;
+      modal.classList.add('active');
+    }
+
+    function closeUserModal() {
+      const modal = document.getElementById('userFormModal');
+      modal.classList.remove('active');
+      document.getElementById('userId').readOnly = true;
+      currentCustomerId = null;
+    }
+
+    function editCustomer(event) {
+      event.stopPropagation();
+      const customer = JSON.parse(event.currentTarget.dataset.item);
+      currentCustomerId = customer.CUST_ID;
+      const deleteBtn = document.getElementById('deleteUserBtn');
+      
+      document.getElementById('userId').value = customer.CUST_ID;
+      document.getElementById('userId').readOnly = true; // Jangan ubah NIM saat edit
+      document.getElementById('fullName').value = customer.CUST_NAME || '';
+      document.getElementById('address').value = customer.ADDRESS || '';
+      document.getElementById('pob').value = customer.PLACE_OF_BIRTH || '';
+      document.getElementById('dob').value = customer.DATE_OF_BIRTH ? customer.DATE_OF_BIRTH.split('T')[0] : '';
+      document.getElementById('contact').value = customer.CONTACT_NUMBER || '';
+      document.getElementById('email').value = customer.EMAIL || '';
+      document.getElementById('gender').value = customer.GENDER_ID || 'L';
+
+      deleteBtn.disabled = false;
+      const modal = document.getElementById('userFormModal');
+      modal.classList.add('active');
+    }
+
+    async function deleteCustomer() {
+      if (!currentCustomerId) {
+        alert('Tidak ada data yang dipilih');
+        return;
+      }
+      if (!confirm('Yakin ingin menghapus pelanggan ini?')) return;
+
+      try {
+        const response = await fetch(`http://127.0.0.1:5000/api/customers/${currentCustomerId}`, {
+          method: 'DELETE',
+        });
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          alert('Gagal menghapus data');
+        }
+      } catch (error) {
+        console.error('Error deleting customer:', error);
+        alert('Terjadi kesalahan');
+      }
+    }
+
+    const form = document.getElementById('userForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = {
+        cust_id: document.getElementById('userId').value,
+        cust_name: document.getElementById('fullName').value,
+        address: document.getElementById('address').value,
+        place_of_birth: document.getElementById('pob').value,
+        date_of_birth: document.getElementById('dob').value,
+        contact_number: document.getElementById('contact').value,
+        email: document.getElementById('email').value,
+        gender_id: document.getElementById('gender').value,
+      };
+
+      try {
+        const baseUrl = 'http://127.0.0.1:5000/api/customers';
+        const endpoint = currentCustomerId ? `${baseUrl}/${currentCustomerId}` : baseUrl;
+        const method = currentCustomerId ? 'PUT' : 'POST';
+
+        const response = await fetch(endpoint, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+
+        if (response.ok) {
+          closeUserModal();
+          window.location.reload();
+        } else {
+          alert('Gagal menyimpan data');
+        }
+      } catch (error) {
+        console.error('Error saving customer:', error);
+        alert('Terjadi kesalahan');
+      }
+    });
+
+    // Close modal when clicking outside
+    const modal = document.getElementById('userFormModal');
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeUserModal();
+      }
+    });
+  </script>
+</Layout>

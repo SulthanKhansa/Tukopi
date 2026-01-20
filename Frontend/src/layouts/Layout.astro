@@ -1,0 +1,38 @@
+---
+// Layout.astro
+import Header from '../components/Header.astro';
+import '../css/global.css';
+
+interface Props {
+  title?: string;
+  isAdmin?: boolean;
+}
+
+const { title = 'TUKO - Dulu Minum, Baru Kerja', isAdmin = false } = Astro.props;
+---
+
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="description" content="TUKO - Minuman berkualitas untuk produktivitas maksimal" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="generator" content={Astro.generator} />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=Irish+Grover&family=Jua&family=Jersey+25&family=Inclusive+Sans&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/feather-icons"></script>
+  <title>{title}</title>
+</head>
+<body>
+  <Header isAdmin={isAdmin} />
+  <slot />
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof feather !== 'undefined') {
+        feather.replace();
+      }
+    });
+  </script>
+</body>
+</html>

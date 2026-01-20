@@ -1,0 +1,33 @@
+---
+import '../css/global.css';
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="TUKO - Kopi berkualitas dari rumah" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Irish+Grover&family=Jua&family=Jersey+25&display=swap" rel="stylesheet" />
+    <script src="https://unpkg.com/feather-icons"></script>
+  </head>
+  <body>
+    <slot />
+    <script is:inline>
+      document.addEventListener('DOMContentLoaded', () => {
+        if (typeof feather !== 'undefined') {
+          feather.replace();
+        }
+      });
+    </script>
+  </body>
+</html>

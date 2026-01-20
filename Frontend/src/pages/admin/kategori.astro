@@ -1,0 +1,193 @@
+---
+// Admin Categories (Kategori)
+import Layout from '../../layouts/Layout.astro';
+import { apiService } from '../../lib/apiService';
+import '../../css/admin.css';
+
+const categories = await apiService.getCategories() as any[];
+---
+
+<Layout title="Data Kategori - TUKO Admin" isAdmin={true}>
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <nav class="admin-menu">
+        <a href="/admin/dashboard" class="menu-item">
+          <span>Beranda</span>
+        </a>
+        <a href="/admin/transaksi" class="menu-item">
+          <span>Transaksi</span>
+        </a>
+        <a href="/admin/kasir" class="menu-item">
+          <span>Kasir</span>
+        </a>
+        <a href="/admin/user" class="menu-item">
+          <span>Pengguna</span>
+        </a>
+        <a href="/admin/product" class="menu-item">
+          <span>Produk</span>
+        </a>
+        <a href="/admin/kategori" class="menu-item active">
+          <span>Kategori</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="/" class="logout-btn">
+          <span>Keluar</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <div class="admin-header">
+        <h1>Data Kategori</h1>
+        <button class="btn-baru" onclick="openCategoryModal()">Baru</button>
+      </div>
+
+      <div class="transactions-section">
+        <div class="table-scroll-wrapper">
+          <div class="table-container">
+            <div class="table-header category-grid">
+              <div class="col-id">ID Kategori</div>
+              <div class="col-name">Nama Kategori</div>
+            </div>
+            
+            <div class="table-body">
+              {categories.map((item: any) => (
+                <div 
+                  class="transaction-card category-grid" 
+                  data-item={JSON.stringify(item)}
+                  onclick="editCategory(event)"
+                >
+                  <div class="col-id">{item.CATEGORY_ID}</div>
+                  <div class="col-name">{item.CATEGORY}</div>
+                </div>
+              ))}
+              {categories.length === 0 && (
+                <div class="transaction-card empty category-grid">
+                  <span>Belum ada data kategori</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Form -->
+  <div id="categoryFormModal" class="modal">
+    <div class="modal-content">
+      <form id="categoryForm">
+        <div class="form-row">
+          <label for="categoryId">ID (e.g. KP)</label>
+          <input type="text" id="categoryId" required maxlength="2" />
+        </div>
+
+        <div class="form-row">
+          <label for="categoryName">Nama Kategori</label>
+          <input type="text" id="categoryName" required />
+        </div>
+
+        <div class="form-actions-centered">
+          <button type="submit" class="btn-green">Simpan</button>
+          <button type="button" class="btn-red" id="deleteCategoryBtn" onclick="deleteCategory()" disabled>Hapus</button>
+          <button type="button" class="btn-gray" onclick="closeCategoryModal()">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script is:inline>
+    let currentCategoryId = null;
+
+    function openCategoryModal() {
+      const modal = document.getElementById('categoryFormModal');
+      const form = document.getElementById('categoryForm');
+      const deleteBtn = document.getElementById('deleteCategoryBtn');
+      const idInput = document.getElementById('categoryId');
+      
+      currentCategoryId = null;
+      form.reset();
+      idInput.readOnly = false;
+      deleteBtn.disabled = true;
+      modal.classList.add('active');
+    }
+
+    function closeCategoryModal() {
+      const modal = document.getElementById('categoryFormModal');
+      modal.classList.remove('active');
+      currentCategoryId = null;
+    }
+
+    function editCategory(event) {
+      event.stopPropagation();
+      const category = JSON.parse(event.currentTarget.dataset.item);
+      currentCategoryId = category.CATEGORY_ID;
+      const deleteBtn = document.getElementById('deleteCategoryBtn');
+      const idInput = document.getElementById('categoryId');
+      
+      idInput.value = category.CATEGORY_ID;
+      idInput.readOnly = true;
+      document.getElementById('categoryName').value = category.CATEGORY || '';
+
+      deleteBtn.disabled = false;
+      const modal = document.getElementById('categoryFormModal');
+      modal.classList.add('active');
+    }
+
+    async function deleteCategory() {
+      if (!currentCategoryId) return;
+      if (!confirm('Hapus kategori ini?')) return;
+
+      try {
+        const response = await fetch(`http://localhost:5000/api/categories/${currentCategoryId}`, {
+          method: 'DELETE',
+        });
+        const res = await response.json();
+        alert(res.message);
+        if (response.ok) {
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error('Error deleting category:', error);
+        alert('Terjadi kesalahan');
+      }
+    }
+
+    document.getElementById('categoryForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('categoryId').value;
+      const name = document.getElementById('categoryName').value;
+
+      try {
+        const baseUrl = 'http://localhost:5000/api/categories';
+        const endpoint = currentCategoryId ? `${baseUrl}/${currentCategoryId}` : baseUrl;
+        const method = currentCategoryId ? 'PUT' : 'POST';
+
+        const response = await fetch(endpoint, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, name }),
+        });
+
+        const res = await response.json();
+        alert(res.message);
+        if (response.ok) {
+          closeCategoryModal();
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error('Error saving category:', error);
+        alert('Terjadi kesalahan');
+      }
+    });
+
+    // Globally expose functions
+    window.openCategoryModal = openCategoryModal;
+    window.closeCategoryModal = closeCategoryModal;
+    window.editCategory = editCategory;
+    window.deleteCategory = deleteCategory;
+  </script>
+</Layout>
