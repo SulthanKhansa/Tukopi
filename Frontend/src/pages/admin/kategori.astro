@@ -101,7 +101,7 @@ const categories = await apiService.getCategories() as any[];
 
   <script>
     import { apiService } from '../../lib/apiService';
-    let currentCategoryId = null;
+    let currentCategoryId: string | null = null;
 
     function openCategoryModal() {
       const modal = document.getElementById('categoryFormModal');
@@ -122,9 +122,12 @@ const categories = await apiService.getCategories() as any[];
       currentCategoryId = null;
     }
 
-    function editCategory(event) {
-      event.stopPropagation();
-      const category = JSON.parse(event.currentTarget.dataset.item);
+    function editCategory(event: any) {
+      if (event && event.stopPropagation) event.stopPropagation();
+      const datasetItem = event.currentTarget.dataset.item;
+      if (!datasetItem) return;
+
+      const category = JSON.parse(datasetItem);
       currentCategoryId = category.CATEGORY_ID;
       const deleteBtn = document.getElementById('deleteCategoryBtn') as HTMLButtonElement;
       const idInput = document.getElementById('categoryId') as HTMLInputElement;

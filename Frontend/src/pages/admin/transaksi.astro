@@ -140,10 +140,10 @@ const transactions = await apiService.getAdminOrders() as any[];
   <script>
     import { apiService } from '../../lib/apiService';
 
-    let currentTrId = null;
+    let currentTrId: string | number | null = null;
 
-    function editTransaction(event, tr) {
-      event.stopPropagation();
+    function editTransaction(event: MouseEvent | any, tr: any) {
+      if (event && event.stopPropagation) event.stopPropagation();
       currentTrId = tr.id;
       
       (document.getElementById('trId') as HTMLInputElement).value = tr.id;

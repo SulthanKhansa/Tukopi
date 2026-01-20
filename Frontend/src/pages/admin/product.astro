@@ -128,43 +128,51 @@ const categories = await apiService.getCategories() as any[];
   <script>
     import { apiService } from '../../lib/apiService';
 
-    let currentProductId = null;
+    let currentProductId: string | null = null;
 
     function openProductModal() {
       const modal = document.getElementById('productFormModal');
-      const form = document.getElementById('productForm');
-      const deleteBtn = document.getElementById('deleteProductBtn');
+      const form = document.getElementById('productForm') as HTMLFormElement;
+      const deleteBtn = document.getElementById('deleteProductBtn') as HTMLButtonElement;
       
+      if (!modal || !form) return;
+
       currentProductId = null;
       form.reset();
-      document.getElementById('productId').value = '';
-      document.getElementById('productId').placeholder = 'Auto-Increment';
+      (document.getElementById('productId') as HTMLInputElement).value = '';
+      (document.getElementById('productId') as HTMLInputElement).placeholder = 'Auto-Increment';
       deleteBtn.disabled = true;
       modal.classList.add('active');
     }
 
     function closeProductModal() {
       const modal = document.getElementById('productFormModal');
-      modal.classList.remove('active');
-      document.getElementById('productId').placeholder = '';
+      if (modal) {
+        modal.classList.remove('active');
+      }
+      const pId = document.getElementById('productId') as HTMLInputElement;
+      if (pId) pId.placeholder = '';
       currentProductId = null;
     }
 
-    function editProduct(event) {
-      event.stopPropagation();
-      const product = JSON.parse(event.currentTarget.dataset.item);
-      currentProductId = product.PRODUCT_ID;
-      const deleteBtn = document.getElementById('deleteProductBtn');
+    function editProduct(event: any) {
+      if (event && event.stopPropagation) event.stopPropagation();
+      const datasetItem = event.currentTarget.dataset.item;
+      if (!datasetItem) return;
       
-      document.getElementById('productId').value = product.PRODUCT_ID;
-      document.getElementById('productName').value = product.PRODUCT_NAME || '';
-      document.getElementById('category').value = product.CATEGORY_ID || 'KP';
-      document.getElementById('price').value = parseInt(product.PRICE) || 0;
-      document.getElementById('stock').value = product.STOCK || 0;
+      const product = JSON.parse(datasetItem);
+      currentProductId = product.PRODUCT_ID;
+      const deleteBtn = document.getElementById('deleteProductBtn') as HTMLButtonElement;
+      
+      (document.getElementById('productId') as HTMLInputElement).value = product.PRODUCT_ID;
+      (document.getElementById('productName') as HTMLInputElement).value = product.PRODUCT_NAME || '';
+      (document.getElementById('category') as HTMLSelectElement).value = product.CATEGORY_ID || 'KP';
+      (document.getElementById('price') as HTMLInputElement).value = (parseInt(product.PRICE) || 0).toString();
+      (document.getElementById('stock') as HTMLInputElement).value = (product.STOCK || 0).toString();
 
-      deleteBtn.disabled = false;
+      if (deleteBtn) deleteBtn.disabled = false;
       const modal = document.getElementById('productFormModal');
-      modal.classList.add('active');
+      if (modal) modal.classList.add('active');
     }
 
     async function deleteProduct() {
@@ -187,16 +195,16 @@ const categories = await apiService.getCategories() as any[];
       }
     }
 
-    const form = document.getElementById('productForm');
-    form.addEventListener('submit', async (e) => {
+    const form = document.getElementById('productForm') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const formData = {
-        product_id: document.getElementById('productId').value,
-        product_name: document.getElementById('productName').value,
-        category_id: document.getElementById('category').value,
-        price: parseInt(document.getElementById('price').value),
-        stock: parseInt(document.getElementById('stock').value),
+        product_id: (document.getElementById('productId') as HTMLInputElement).value,
+        product_name: (document.getElementById('productName') as HTMLInputElement).value,
+        category_id: (document.getElementById('category') as HTMLSelectElement).value,
+        price: parseInt((document.getElementById('price') as HTMLInputElement).value),
+        stock: parseInt((document.getElementById('stock') as HTMLInputElement).value),
       };
 
       try {
@@ -228,6 +236,11 @@ const categories = await apiService.getCategories() as any[];
     });
 
     // Globally expose functions for onclick
+    (window as any).openProductModal = openProductModal;
+    (window as any).closeProductModal = closeProductModal;
+    (window as any).editProduct = editProduct;
+    (window as any).deleteProduct = deleteProduct;
+  </script>
     (window as any).openProductModal = openProductModal;
     (window as any).closeProductModal = closeProductModal;
     (window as any).editProduct = editProduct;

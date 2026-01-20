@@ -1,13 +1,25 @@
 // API Service untuk frontend Astro
-const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-const API_BASE_URL = isProduction ? "https://your-backend-url.com/api" : "http://127.0.0.1:5000/api";
-const NETLIFY_FUNCTIONS_URL = "/.netlify/functions";
+const isProduction = import.meta.env.PROD;
+
+// Helper untuk deteksi base URL di server vs client
+const getBaseUrl = () => {
+  if (typeof window !== "undefined") return ""; // Di browser bisa pakai relative path
+  return process.env.URL || process.env.DEPLOY_PRIME_URL || ""; // Di server Netlify butuh absolute path
+};
+
+const API_BASE_URL = isProduction
+  ? "https://your-backend-url.com/api"
+  : "http://127.0.0.1:5000/api";
+
+const NETLIFY_FUNCTIONS_URL = `${getBaseUrl()}/.netlify/functions`;
 
 export const apiService = {
   // Auth API
   async login(id, password) {
     try {
-      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/auth/login` : `${API_BASE_URL}/auth/login`;
+      const url = isProduction
+        ? `${NETLIFY_FUNCTIONS_URL}/auth/login`
+        : `${API_BASE_URL}/auth/login`;
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -22,7 +34,9 @@ export const apiService = {
 
   async register(id, name, email, password) {
     try {
-      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/auth/register` : `${API_BASE_URL}/auth/register`;
+      const url = isProduction
+        ? `${NETLIFY_FUNCTIONS_URL}/auth/register`
+        : `${API_BASE_URL}/auth/register`;
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -54,7 +68,12 @@ export const apiService = {
       const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/orders/stats`);
       const json = await resp.json();
       // json.data now contains { stats: {...}, transactions: [...] }
-      return json.data || { stats: { total_orders: 0, total_revenue: 0 }, transactions: [] };
+      return (
+        json.data || {
+          stats: { total_orders: 0, total_revenue: 0 },
+          transactions: [],
+        }
+      );
     }
     return await this.fetchAdmin("/orders/dashboard/stats");
   },
@@ -98,7 +117,9 @@ export const apiService = {
   async getProducts() {
     try {
       // Jika di produksi (Netlify), gunakan Netlify Function yang baru dibuat untuk Neon
-      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/products` : `${API_BASE_URL}/products`;
+      const url = isProduction
+        ? `${NETLIFY_FUNCTIONS_URL}/products`
+        : `${API_BASE_URL}/products`;
       const response = await fetch(url);
       return await response.json();
     } catch (error) {
@@ -128,18 +149,19 @@ export const apiService = {
 
   async getProductById(id) {
     if (isProduction) {
-      // For now we don't have a specific getProductById function, 
+      // For now we don't have a specific getProductById function,
       // but we can filter from getAdminProducts or just keep it simple
       const products = await this.getAdminProducts();
-      return products.find(p => p.PRODUCT_ID === id) || null;
+      return products.find((p) => p.PRODUCT_ID === id) || null;
     }
     return await this.fetchAdmin(`/products/${id}`);
-  },
   },
 
   async getCustomerOrders(id) {
     if (isProduction) {
-      const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/customers/${id}/orders`);
+      const resp = await fetch(
+        `${NETLIFY_FUNCTIONS_URL}/customers/${id}/orders`,
+      );
       const json = await resp.json();
       return json.data || json;
     }
@@ -149,7 +171,9 @@ export const apiService = {
   // Actions
   async createCategory(id, name) {
     try {
-      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/categories` : `${API_BASE_URL}/categories`;
+      const url = isProduction
+        ? `${NETLIFY_FUNCTIONS_URL}/categories`
+        : `${API_BASE_URL}/categories`;
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -163,7 +187,9 @@ export const apiService = {
 
   async updateCategory(id, name) {
     try {
-      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/categories/${id}` : `${API_BASE_URL}/categories/${id}`;
+      const url = isProduction
+        ? `${NETLIFY_FUNCTIONS_URL}/categories/${id}`
+        : `${API_BASE_URL}/categories/${id}`;
       const response = await fetch(url, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -177,7 +203,9 @@ export const apiService = {
 
   async deleteCategory(id) {
     try {
-      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/categories/${id}` : `${API_BASE_URL}/categories/${id}`;
+      const url = isProduction
+        ? `${NETLIFY_FUNCTIONS_URL}/categories/${id}`
+        : `${API_BASE_URL}/categories/${id}`;
       const response = await fetch(url, {
         method: "DELETE",
       });
@@ -189,7 +217,9 @@ export const apiService = {
 
   async createProduct(data) {
     try {
-      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/products` : `${API_BASE_URL}/products`;
+      const url = isProduction
+        ? `${NETLIFY_FUNCTIONS_URL}/products`
+        : `${API_BASE_URL}/products`;
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -203,7 +233,9 @@ export const apiService = {
 
   async updateProduct(id, data) {
     try {
-      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/products/${id}` : `${API_BASE_URL}/products/${id}`;
+      const url = isProduction
+        ? `${NETLIFY_FUNCTIONS_URL}/products/${id}`
+        : `${API_BASE_URL}/products/${id}`;
       const response = await fetch(url, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -217,7 +249,9 @@ export const apiService = {
 
   async deleteProduct(id) {
     try {
-      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/products/${id}` : `${API_BASE_URL}/products/${id}`;
+      const url = isProduction
+        ? `${NETLIFY_FUNCTIONS_URL}/products/${id}`
+        : `${API_BASE_URL}/products/${id}`;
       const response = await fetch(url, {
         method: "DELETE",
       });
@@ -229,7 +263,9 @@ export const apiService = {
 
   async createOrder(orderData) {
     try {
-      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/orders` : `${API_BASE_URL}/orders`;
+      const url = isProduction
+        ? `${NETLIFY_FUNCTIONS_URL}/orders`
+        : `${API_BASE_URL}/orders`;
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -243,7 +279,9 @@ export const apiService = {
 
   async updateOrder(id, data) {
     try {
-      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/orders/${id}` : `${API_BASE_URL}/orders/${id}`;
+      const url = isProduction
+        ? `${NETLIFY_FUNCTIONS_URL}/orders/${id}`
+        : `${API_BASE_URL}/orders/${id}`;
       const response = await fetch(url, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -257,7 +295,9 @@ export const apiService = {
 
   async deleteOrder(id) {
     try {
-      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/orders/${id}` : `${API_BASE_URL}/orders/${id}`;
+      const url = isProduction
+        ? `${NETLIFY_FUNCTIONS_URL}/orders/${id}`
+        : `${API_BASE_URL}/orders/${id}`;
       const response = await fetch(url, {
         method: "DELETE",
       });
@@ -269,7 +309,9 @@ export const apiService = {
 
   async updateCustomer(id, data) {
     try {
-      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/customers/${id}` : `${API_BASE_URL}/customers/${id}`;
+      const url = isProduction
+        ? `${NETLIFY_FUNCTIONS_URL}/customers/${id}`
+        : `${API_BASE_URL}/customers/${id}`;
       const response = await fetch(url, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
