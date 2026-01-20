@@ -99,25 +99,26 @@ const categories = await apiService.getCategories() as any[];
     </div>
   </div>
 
-  <script is:inline>
+  <script>
+    import { apiService } from '../../lib/apiService';
     let currentCategoryId = null;
 
     function openCategoryModal() {
       const modal = document.getElementById('categoryFormModal');
-      const form = document.getElementById('categoryForm');
-      const deleteBtn = document.getElementById('deleteCategoryBtn');
-      const idInput = document.getElementById('categoryId');
+      const form = document.getElementById('categoryForm') as HTMLFormElement;
+      const deleteBtn = document.getElementById('deleteCategoryBtn') as HTMLButtonElement;
+      const idInput = document.getElementById('categoryId') as HTMLInputElement;
       
       currentCategoryId = null;
-      form.reset();
-      idInput.readOnly = false;
-      deleteBtn.disabled = true;
-      modal.classList.add('active');
+      if (form) form.reset();
+      if (idInput) idInput.readOnly = false;
+      if (deleteBtn) deleteBtn.disabled = true;
+      modal?.classList.add('active');
     }
 
     function closeCategoryModal() {
       const modal = document.getElementById('categoryFormModal');
-      modal.classList.remove('active');
+      modal?.classList.remove('active');
       currentCategoryId = null;
     }
 
@@ -125,16 +126,19 @@ const categories = await apiService.getCategories() as any[];
       event.stopPropagation();
       const category = JSON.parse(event.currentTarget.dataset.item);
       currentCategoryId = category.CATEGORY_ID;
-      const deleteBtn = document.getElementById('deleteCategoryBtn');
-      const idInput = document.getElementById('categoryId');
+      const deleteBtn = document.getElementById('deleteCategoryBtn') as HTMLButtonElement;
+      const idInput = document.getElementById('categoryId') as HTMLInputElement;
       
-      idInput.value = category.CATEGORY_ID;
-      idInput.readOnly = true;
-      document.getElementById('categoryName').value = category.CATEGORY || '';
+      if (idInput) {
+        idInput.value = category.CATEGORY_ID;
+        idInput.readOnly = true;
+      }
+      const nameInput = document.getElementById('categoryName') as HTMLInputElement;
+      if (nameInput) nameInput.value = category.CATEGORY || '';
 
-      deleteBtn.disabled = false;
+      if (deleteBtn) deleteBtn.disabled = false;
       const modal = document.getElementById('categoryFormModal');
-      modal.classList.add('active');
+      modal?.classList.add('active');
     }
 
     async function deleteCategory() {
@@ -142,13 +146,11 @@ const categories = await apiService.getCategories() as any[];
       if (!confirm('Hapus kategori ini?')) return;
 
       try {
-        const response = await fetch(`http://localhost:5000/api/categories/${currentCategoryId}`, {
-          method: 'DELETE',
-        });
-        const res = await response.json();
-        alert(res.message);
-        if (response.ok) {
+        const result = await apiService.deleteCategory(currentCategoryId);
+        if (result.success !== false) {
           window.location.reload();
+        } else {
+          alert('Gagal menghapus: ' + (result.message || 'Cek koneksi'));
         }
       } catch (error) {
         console.error('Error deleting category:', error);
@@ -156,27 +158,26 @@ const categories = await apiService.getCategories() as any[];
       }
     }
 
-    document.getElementById('categoryForm').addEventListener('submit', async (e) => {
+    document.getElementById('categoryForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const id = document.getElementById('categoryId').value;
-      const name = document.getElementById('categoryName').value;
+      const idInput = document.getElementById('categoryId') as HTMLInputElement;
+      const nameInput = document.getElementById('categoryName') as HTMLInputElement;
+      const id = idInput.value;
+      const name = nameInput.value;
 
       try {
-        const baseUrl = 'http://localhost:5000/api/categories';
-        const endpoint = currentCategoryId ? `${baseUrl}/${currentCategoryId}` : baseUrl;
-        const method = currentCategoryId ? 'PUT' : 'POST';
+        let result;
+        if (currentCategoryId) {
+          result = await apiService.updateCategory(currentCategoryId, name);
+        } else {
+          result = await apiService.createCategory(id, name);
+        }
 
-        const response = await fetch(endpoint, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, name }),
-        });
-
-        const res = await response.json();
-        alert(res.message);
-        if (response.ok) {
+        if (result.success !== false) {
           closeCategoryModal();
           window.location.reload();
+        } else {
+          alert('Gagal menyimpan: ' + (result.message || 'Cek input/id sudah ada?'));
         }
       } catch (error) {
         console.error('Error saving category:', error);
@@ -185,9 +186,9 @@ const categories = await apiService.getCategories() as any[];
     });
 
     // Globally expose functions
-    window.openCategoryModal = openCategoryModal;
-    window.closeCategoryModal = closeCategoryModal;
-    window.editCategory = editCategory;
-    window.deleteCategory = deleteCategory;
+    (window as any).openCategoryModal = openCategoryModal;
+    (window as any).closeCategoryModal = closeCategoryModal;
+    (window as any).editCategory = editCategory;
+    (window as any).deleteCategory = deleteCategory;
   </script>
 </Layout>

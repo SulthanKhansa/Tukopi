@@ -148,7 +148,8 @@ export const apiService = {
   // Actions
   async createCategory(id, name) {
     try {
-      const response = await fetch(`${API_BASE_URL}/categories`, {
+      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/categories` : `${API_BASE_URL}/categories`;
+      const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, name }),
@@ -161,7 +162,8 @@ export const apiService = {
 
   async updateCategory(id, name) {
     try {
-      const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
+      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/categories/${id}` : `${API_BASE_URL}/categories/${id}`;
+      const response = await fetch(url, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
@@ -174,7 +176,48 @@ export const apiService = {
 
   async deleteCategory(id) {
     try {
-      const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
+      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/categories/${id}` : `${API_BASE_URL}/categories/${id}`;
+      const response = await fetch(url, {
+        method: "DELETE",
+      });
+      return await response.json();
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+
+  async createProduct(data) {
+    try {
+      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/products` : `${API_BASE_URL}/products`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+
+  async updateProduct(id, data) {
+    try {
+      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/products/${id}` : `${API_BASE_URL}/products/${id}`;
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+
+  async deleteProduct(id) {
+    try {
+      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/products/${id}` : `${API_BASE_URL}/products/${id}`;
+      const response = await fetch(url, {
         method: "DELETE",
       });
       return await response.json();
