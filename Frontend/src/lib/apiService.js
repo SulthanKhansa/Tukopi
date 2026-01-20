@@ -7,7 +7,8 @@ export const apiService = {
   // Auth API
   async login(id, password) {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/auth/login` : `${API_BASE_URL}/auth/login`;
+      const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, password }),
@@ -21,7 +22,8 @@ export const apiService = {
 
   async register(id, name, email, password) {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/auth/register` : `${API_BASE_URL}/auth/register`;
+      const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, name, email, password }),
@@ -85,6 +87,11 @@ export const apiService = {
 
   // Per-ID Lookups
   async getCustomerById(id) {
+    if (isProduction) {
+      const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/customers/${id}`);
+      const json = await resp.json();
+      return json.data || json;
+    }
     return await this.fetchAdmin(`/customers/${id}`);
   },
 
@@ -93,6 +100,11 @@ export const apiService = {
   },
 
   async getCustomerOrders(id) {
+    if (isProduction) {
+      const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/customers/${id}/orders`);
+      const json = await resp.json();
+      return json.data || json;
+    }
     return await this.fetchAdmin(`/customers/${id}/orders`);
   },
 
@@ -136,7 +148,8 @@ export const apiService = {
 
   async createOrder(orderData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/orders`, {
+      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/orders` : `${API_BASE_URL}/orders`;
+      const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),
@@ -149,7 +162,8 @@ export const apiService = {
 
   async updateCustomer(id, data) {
     try {
-      const response = await fetch(`${API_BASE_URL}/customers/${id}`, {
+      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/customers/${id}` : `${API_BASE_URL}/customers/${id}`;
+      const response = await fetch(url, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
