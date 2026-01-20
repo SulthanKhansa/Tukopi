@@ -9,7 +9,7 @@ exports.handler = async (event, context) => {
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
       },
       body: ''
     };
@@ -36,10 +36,28 @@ exports.handler = async (event, context) => {
             (SELECT COUNT(*) FROM "products") as total_products
           FROM "orders"
         `);
+        
+        const recentRes = await client.query(`
+          SELECT 
+            o."ORDER_ID" AS id, o."ORDER_DATE" AS tanggal, 
+            c."CUST_NAME" AS pelanggan, ca."USERNAME" AS kasir, 
+            o."TOTAL" AS total, m."METHOD" AS metode_pembayaran
+          FROM "orders" o
+          LEFT JOIN "customers" c ON o."CUST_ID" = c."CUST_ID"
+          LEFT JOIN "cashiers" ca ON o."USER_ID" = ca."USER_ID"
+          LEFT JOIN "payment_methods" m ON o."METHOD_ID" = m."METHOD_ID"
+          ORDER BY o."ORDER_DATE" DESC LIMIT 5
+        `);
+
         return {
           statusCode: 200,
-          headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify({ data: statsRes.rows[0] })
+          headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            data: {
+              stats: statsRes.rows[0],
+              transactions: recentRes.rows
+            }
+          })
         };
       }
 
@@ -52,7 +70,10 @@ exports.handler = async (event, context) => {
           o."TOTAL" AS total, 
           m."METHOD" AS metode_pembayaran,
           o."BANK_TRANS" AS bank,
-          o."RECEIPT_NUMBER" AS nomor_nota
+          o."RECEIPT_NUMBER" AS nomor_nota,
+          o."CUST_ID" AS cust_id,
+          o."USER_ID" AS user_id,
+          o."METHOD_ID" AS method_id
         FROM "orders" o
         LEFT JOIN "customers" c ON o."CUST_ID" = c."CUST_ID"
         LEFT JOIN "cashiers" ca ON o."USER_ID" = ca."USER_ID"
@@ -61,7 +82,7 @@ exports.handler = async (event, context) => {
       `);
       return {
         statusCode: 200,
-        headers: { "Access-Control-Allow-Origin": "*" },
+        headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
         body: JSON.stringify({ data: res.rows })
       };
     }
@@ -70,55 +91,82 @@ exports.handler = async (event, context) => {
     if (event.httpMethod === 'POST') {
       const { orderDate, custId, userId, methodId, total, items } = JSON.parse(event.body);
 
-      // Start Transaction
       await client.query('BEGIN');
 
-      // 1. Insert into orders
       const orderSql = `
         INSERT INTO "orders" ("ORDER_DATE", "CUST_ID", "USER_ID", "TOTAL", "METHOD_ID") 
         VALUES ($1, $2, $3, $4, $5) 
         RETURNING "ORDER_ID"
       `;
-      // Use logical defaults for production orders
-      const finalCustId = custId || '-NoName-';
-      const finalUserId = userId || '12345678';
-      const finalMethodId = methodId || '1';
+      const orderRes = await client.query(orderSql, [
+        orderDate || new Date(),
+        custId || '-NoName-',
+        userId || '12345678',
+        total,
+        methodId || '1'
+      ]);
 
-    const orderId = orderRes.rows[0].ORDER_ID;
+      const orderId = orderRes.rows[0].ORDER_ID;
 
-    // 2. Insert into order_details
-    for (const item of items) {
-      await client.query(
-        'INSERT INTO "order_details" ("ORDER_ID", "PRODUCT_ID", "QTY", "PRICE") VALUES ($1, $2, $3, $4)',
-        [orderId, item.productId, item.qty, item.price]
-      );
-      
-      // 3. Update stock
-      await client.query(
-        'UPDATE "products" SET "STOCK" = "STOCK" - $1 WHERE "PRODUCT_ID" = $2',
-        [item.qty, item.productId]
-      );
+      if (items && items.length > 0) {
+        for (const item of items) {
+          await client.query(
+            'INSERT INTO "order_details" ("ORDER_ID", "PRODUCT_ID", "QTY", "PRICE") VALUES ($1, $2, $3, $4)',
+            [orderId, item.productId, item.qty, item.price]
+          );
+          
+          await client.query(
+            'UPDATE "products" SET "STOCK" = "STOCK" - $1 WHERE "PRODUCT_ID" = $2',
+            [item.qty, item.productId]
+          );
+        }
+      }
+
+      await client.query('COMMIT');
+
+      return {
+        statusCode: 201,
+        headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
+        body: JSON.stringify({ success: true, message: "Order created", orderId })
+      };
     }
 
-    await client.query('COMMIT');
+    // UPDATE ORDER
+    if (event.httpMethod === 'PUT') {
+      const id = event.path.split('/').pop();
+      const { total, methodId, bank, receipt } = JSON.parse(event.body);
+      
+      await client.query(`
+        UPDATE "orders" 
+        SET "TOTAL" = $1, "METHOD_ID" = $2, "BANK_TRANS" = $3, "RECEIPT_NUMBER" = $4
+        WHERE "ORDER_ID" = $5
+      `, [total, methodId, bank, receipt, id]);
 
-    return {
-      statusCode: 201,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
-      },
-      body: JSON.stringify({
-        success: true,
-        message: "Order berhasil dibuat (Neon)",
-        orderId: orderId
-      }),
-    };
+      return {
+        statusCode: 200,
+        headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
+        body: JSON.stringify({ success: true, message: "Updated" })
+      };
+    }
+
+    // DELETE ORDER
+    if (event.httpMethod === 'DELETE') {
+      const id = event.path.split('/').pop();
+      await client.query('DELETE FROM "order_details" WHERE "ORDER_ID" = $1', [id]);
+      await client.query('DELETE FROM "orders" WHERE "ORDER_ID" = $1', [id]);
+      return {
+        statusCode: 200,
+        headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
+        body: JSON.stringify({ success: true, message: "Deleted" })
+      };
+    }
+
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (event.httpMethod === 'POST') await client.query('ROLLBACK');
     console.error("Order error:", err);
     return {
       statusCode: 500,
+      headers: { "Access-Control-Allow-Origin": "*" },
       body: JSON.stringify({ success: false, message: err.message }),
     };
   } finally {

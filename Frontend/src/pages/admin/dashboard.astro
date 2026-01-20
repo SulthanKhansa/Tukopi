@@ -5,7 +5,7 @@ import { apiService } from '../../lib/apiService';
 import '../../css/admin.css';
 
 const dashboardData = await apiService.getAdminDashboard();
-const stats = dashboardData?.stats || { totalCustomers: 0, totalProductsSold: 0, totalOrders: 0 };
+const stats = dashboardData?.stats || { total_customers: 0, total_products: 0, total_orders: 0 };
 const transactions = (dashboardData?.transactions || []) as any[];
 ---
 
@@ -51,7 +51,7 @@ const transactions = (dashboardData?.transactions || []) as any[];
         <div class="stat-card">
           <div class="stat-icon"><i data-feather="users"></i></div>
           <div class="stat-info">
-            <div class="stat-number">{stats.totalCustomers}</div>
+            <div class="stat-number">{stats.total_customers || 0}</div>
             <div class="stat-label">Total Pelanggan</div>
           </div>
         </div>
@@ -59,15 +59,15 @@ const transactions = (dashboardData?.transactions || []) as any[];
         <div class="stat-card">
           <div class="stat-icon"><i data-feather="shopping-cart"></i></div>
           <div class="stat-info">
-            <div class="stat-number">{stats.totalProductsSold}</div>
-            <div class="stat-label">Produk Terjual</div>
+            <div class="stat-number">{stats.total_products || 0}</div>
+            <div class="stat-label">Jumlah Menu</div>
           </div>
         </div>
 
         <div class="stat-card">
           <div class="stat-icon"><i data-feather="file-text"></i></div>
           <div class="stat-info">
-            <div class="stat-number">{stats.totalOrders}</div>
+            <div class="stat-number">{stats.total_orders || 0}</div>
             <div class="stat-label">Total Order</div>
           </div>
         </div>

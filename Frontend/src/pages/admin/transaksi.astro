@@ -58,7 +58,11 @@ const transactions = await apiService.getAdminOrders() as any[];
             
             <div class="table-body">
               {transactions.map((tr: any) => (
-                <div class="transaction-card dashboard-grid">
+                <div 
+                  class="transaction-card dashboard-grid" 
+                  onclick={`editTransaction(event, ${JSON.stringify(tr)})`}
+                  style="cursor: pointer;"
+                >
                   <div class="col-id">#{tr.id}</div>
                   <div class="col-date">
                     {new Date(tr.tanggal).toLocaleDateString('id-ID', {
@@ -92,4 +96,120 @@ const transactions = await apiService.getAdminOrders() as any[];
       </div>
     </main>
   </div>
+
+  <!-- Modal Edit Transaksi -->
+  <div id="transactionModal" class="modal">
+    <div class="modal-content">
+      <h2 id="modalTitle">Edit Transaksi</h2>
+      <form id="transactionForm">
+        <input type="hidden" id="trId" />
+        
+        <div class="form-row">
+          <label>Total Pembayaran (IDR)</label>
+          <input type="number" id="trTotal" required />
+        </div>
+
+        <div class="form-row">
+          <label>Metode Pembayaran</label>
+          <select id="trMethod">
+            <option value="1">CASH</option>
+            <option value="2">QRIS</option>
+            <option value="3">TRANSFER</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label>Bank (Jika Transfer)</label>
+          <input type="text" id="trBank" />
+        </div>
+
+        <div class="form-row">
+          <label>Nomor Nota / Referensi</label>
+          <input type="text" id="trReceipt" />
+        </div>
+
+        <div class="form-actions-centered">
+          <button type="submit" class="btn-green">Simpan Perubahan</button>
+          <button type="button" class="btn-red" onclick="deleteTransaction()">Hapus Transaksi</button>
+          <button type="button" class="btn-gray" onclick="closeModal()">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    import { apiService } from '../../lib/apiService';
+
+    let currentTrId = null;
+
+    function editTransaction(event, tr) {
+      event.stopPropagation();
+      currentTrId = tr.id;
+      
+      (document.getElementById('trId') as HTMLInputElement).value = tr.id;
+      (document.getElementById('trTotal') as HTMLInputElement).value = tr.total;
+      (document.getElementById('trMethod') as HTMLSelectElement).value = tr.method_id || '1';
+      (document.getElementById('trBank') as HTMLInputElement).value = tr.bank || '';
+      (document.getElementById('trReceipt') as HTMLInputElement).value = tr.nomor_nota || '';
+
+      document.getElementById('transactionModal')?.classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('transactionModal')?.classList.remove('active');
+      currentTrId = null;
+    }
+
+    async function deleteTransaction() {
+      if (!currentTrId) return;
+      if (!confirm('Yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan.')) return;
+
+      try {
+        const res = await apiService.deleteOrder(currentTrId);
+        if (res.success !== false) {
+          window.location.reload();
+        } else {
+          alert('Gagal menghapus: ' + (res.message || 'Cek koneksi'));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Terjadi kesalahan');
+      }
+    }
+
+    document.getElementById('transactionForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentTrId) return;
+
+      const data = {
+        total: parseInt((document.getElementById('trTotal') as HTMLInputElement).value),
+        methodId: (document.getElementById('trMethod') as HTMLSelectElement).value,
+        bank: (document.getElementById('trBank') as HTMLInputElement).value,
+        receipt: (document.getElementById('trReceipt') as HTMLInputElement).value,
+      };
+
+      try {
+        const res = await apiService.updateOrder(currentTrId, data);
+        if (res.success !== false) {
+          window.location.reload();
+        } else {
+          alert('Gagal update: ' + (res.message || 'Cek koneksi'));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Terjadi kesalahan');
+      }
+    });
+
+    // Handle outside click
+    const modal = document.getElementById('transactionModal');
+    modal?.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    // Expose to window for onclick
+    (window as any).editTransaction = editTransaction;
+    (window as any).closeModal = closeModal;
+    (window as any).deleteTransaction = deleteTransaction;
+  </script>
 </Layout>

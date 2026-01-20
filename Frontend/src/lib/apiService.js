@@ -53,7 +53,8 @@ export const apiService = {
     if (isProduction) {
       const resp = await fetch(`${NETLIFY_FUNCTIONS_URL}/orders/stats`);
       const json = await resp.json();
-      return json.data || { total_orders: 0, total_revenue: 0 };
+      // json.data now contains { stats: {...}, transactions: [...] }
+      return json.data || { stats: { total_orders: 0, total_revenue: 0 }, transactions: [] };
     }
     return await this.fetchAdmin("/orders/dashboard/stats");
   },
@@ -233,6 +234,32 @@ export const apiService = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),
+      });
+      return await response.json();
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+
+  async updateOrder(id, data) {
+    try {
+      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/orders/${id}` : `${API_BASE_URL}/orders/${id}`;
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+
+  async deleteOrder(id) {
+    try {
+      const url = isProduction ? `${NETLIFY_FUNCTIONS_URL}/orders/${id}` : `${API_BASE_URL}/orders/${id}`;
+      const response = await fetch(url, {
+        method: "DELETE",
       });
       return await response.json();
     } catch (error) {
