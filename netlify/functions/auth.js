@@ -41,10 +41,12 @@ exports.handler = async (event, context) => {
       }
 
       // 1. Check Cashiers Table (Admin/Staff)
-      const cashierRes = await client.query('SELECT * FROM "cashiers" WHERE "USERNAME" = $1', [id]);
+      // We check by USER_ID (NIM) or USERNAME to be flexible
+      const cashierRes = await client.query('SELECT * FROM "cashiers" WHERE "USER_ID" = $1 OR "USERNAME" = $2', [id, id]);
       if (cashierRes.rows.length > 0) {
         const user = cashierRes.rows[0];
-        if (password === user.PASSWORD) {
+        // Allow database password OR "admin" password as requested by user
+        if (password === user.PASSWORD || password === 'admin') {
           return {
             statusCode: 200,
             headers,
