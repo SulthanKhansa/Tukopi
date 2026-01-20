@@ -69,24 +69,20 @@ exports.handler = async (event, context) => {
     // CREATE NEW ORDER
     if (event.httpMethod === 'POST') {
       const { orderDate, custId, userId, methodId, total, items } = JSON.parse(event.body);
-    await client.connect();
 
-    // Start Transaction
-    await client.query('BEGIN');
+      // Start Transaction
+      await client.query('BEGIN');
 
-    // 1. Insert into orders
-    const orderSql = `
-      INSERT INTO "orders" ("ORDER_DATE", "CUST_ID", "USER_ID", "TOTAL", "METHOD_ID") 
-      VALUES ($1, $2, $3, $4, $5) 
-      RETURNING "ORDER_ID"
-    `;
-    const orderRes = await client.query(orderSql, [
-      orderDate,
-      custId === 'admin' ? '-NoName-' : (custId || '-NoName-'),
-      userId || '12345678',
-      total,
-      methodId || '1'
-    ]);
+      // 1. Insert into orders
+      const orderSql = `
+        INSERT INTO "orders" ("ORDER_DATE", "CUST_ID", "USER_ID", "TOTAL", "METHOD_ID") 
+        VALUES ($1, $2, $3, $4, $5) 
+        RETURNING "ORDER_ID"
+      `;
+      // Use logical defaults for production orders
+      const finalCustId = custId || '-NoName-';
+      const finalUserId = userId || '12345678';
+      const finalMethodId = methodId || '1';
 
     const orderId = orderRes.rows[0].ORDER_ID;
 
