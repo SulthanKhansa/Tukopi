@@ -6,11 +6,14 @@ const getBaseUrl = () => {
   if (typeof window !== "undefined") return ""; // Di browser bisa pakai relative path
   
   // Di server Netlify (Astro SSR), kita coba beberapa env var standar
-  const url = process.env.URL || process.env.DEPLOY_PRIME_URL || process.env.SITE;
+  // URL provided by Netlify build/runtime env
+  const url = process.env.URL || process.env.DEPLOY_PRIME_URL;
   if (url) {
     return url.startsWith("http") ? url : `https://${url}`;
   }
-  return ""; // Fallback
+  
+  // Fallback dev
+  return "http://localhost:4321"; 
 };
 
 const API_BASE_URL = isProduction
