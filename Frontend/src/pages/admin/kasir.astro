@@ -152,17 +152,17 @@ const cashiers = await apiService.getAdminCashiers() as any[];
         container.innerHTML = allCashiers.map((item: any) => `
           <div 
             class="transaction-card kasir-grid" 
-            onclick="editKasir(event, '${item.USER_ID}')"
+            onclick="editKasir(event, '${item.USER_ID || item.user_id}')"
             style="cursor: pointer"
           >
-            <div class="col-id">${item.USER_ID}</div>
-            <div class="col-username">${item.USERNAME}</div>
-            <div class="col-address">${item.ADDRESS || '-'}</div>
-            <div class="col-pob">${item.PLACE_OF_BIRTH || '-'}</div>
-            <div class="col-dob">${item.DATE_OF_BIRTH ? new Date(item.DATE_OF_BIRTH).toLocaleDateString('id-ID') : '-'}</div>
-            <div class="col-contact">${item.CONTACT_NUMBER || '-'}</div>
-            <div class="col-email">${item.EMAIL || '-'}</div>
-            <div class="col-gender">${item.GENDER_ID === 'L' ? 'Laki-Laki' : 'Perempuan'}</div>
+            <div class="col-id">${item.USER_ID || item.user_id}</div>
+            <div class="col-username">${item.USERNAME || item.username}</div>
+            <div class="col-address">${item.ADDRESS || item.address || '-'}</div>
+            <div class="col-pob">${item.PLACE_OF_BIRTH || item.place_of_birth || '-'}</div>
+            <div class="col-dob">${(item.DATE_OF_BIRTH || item.date_of_birth) ? new Date(item.DATE_OF_BIRTH || item.date_of_birth).toLocaleDateString('id-ID') : '-'}</div>
+            <div class="col-contact">${item.CONTACT_NUMBER || item.contact_number || '-'}</div>
+            <div class="col-email">${item.EMAIL || item.email || '-'}</div>
+            <div class="col-gender">${(item.GENDER_ID || item.gender_id) === 'L' ? 'Laki-Laki' : 'Perempuan'}</div>
           </div>
         `).join('');
       } catch (err) {
@@ -195,21 +195,21 @@ const cashiers = await apiService.getAdminCashiers() as any[];
     function editKasir(event: any, userId: string) {
       if (event && event.stopPropagation) event.stopPropagation();
       
-      const kasir = allCashiers.find(c => c.USER_ID === userId);
+      const kasir = allCashiers.find(c => (c.USER_ID || c.user_id) === userId);
       if (!kasir) return;
 
-      currentKasirId = kasir.USER_ID;
+      currentKasirId = kasir.USER_ID || kasir.user_id;
       const deleteBtn = document.getElementById('deleteKasirBtn') as HTMLButtonElement;
       
-      (document.getElementById('kasirId') as HTMLInputElement).value = kasir.USER_ID;
+      (document.getElementById('kasirId') as HTMLInputElement).value = currentKasirId || '';
       (document.getElementById('kasirId') as HTMLInputElement).readOnly = true;
-      (document.getElementById('username') as HTMLInputElement).value = kasir.USERNAME || '';
-      (document.getElementById('address') as HTMLInputElement).value = kasir.ADDRESS || '';
-      (document.getElementById('pob') as HTMLInputElement).value = kasir.PLACE_OF_BIRTH || '';
-      (document.getElementById('dob') as HTMLInputElement).value = kasir.DATE_OF_BIRTH ? kasir.DATE_OF_BIRTH.split('T')[0] : '';
-      (document.getElementById('contact') as HTMLInputElement).value = kasir.CONTACT_NUMBER || '';
-      (document.getElementById('email') as HTMLInputElement).value = kasir.EMAIL || '';
-      (document.getElementById('gender') as HTMLSelectElement).value = kasir.GENDER_ID || 'L';
+      (document.getElementById('username') as HTMLInputElement).value = kasir.USERNAME || kasir.username || '';
+      (document.getElementById('address') as HTMLInputElement).value = kasir.ADDRESS || kasir.address || '';
+      (document.getElementById('pob') as HTMLInputElement).value = kasir.PLACE_OF_BIRTH || kasir.place_of_birth || '';
+      (document.getElementById('dob') as HTMLInputElement).value = (kasir.DATE_OF_BIRTH || kasir.date_of_birth) ? (kasir.DATE_OF_BIRTH || kasir.date_of_birth).split('T')[0] : '';
+      (document.getElementById('contact') as HTMLInputElement).value = kasir.CONTACT_NUMBER || kasir.contact_number || '';
+      (document.getElementById('email') as HTMLInputElement).value = kasir.EMAIL || kasir.email || '';
+      (document.getElementById('gender') as HTMLSelectElement).value = kasir.GENDER_ID || kasir.gender_id || 'L';
 
       if (deleteBtn) deleteBtn.disabled = false;
       const modal = document.getElementById('kasirFormModal');

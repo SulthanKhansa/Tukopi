@@ -147,14 +147,14 @@ import '../../css/admin.css';
                 data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}'
                 onclick="editCustomer(event)"
               >
-                <div class="col-id">${item.CUST_ID}</div>
-                <div class="col-name">${item.CUST_NAME}</div>
-                <div class="col-address">${item.ADDRESS || '-'}</div>
-                <div class="col-pob">${item.PLACE_OF_BIRTH || '-'}</div>
-                <div class="col-dob">${item.DATE_OF_BIRTH ? new Date(item.DATE_OF_BIRTH).toLocaleDateString('id-ID') : '-'}</div>
-                <div class="col-contact">${item.CONTACT_NUMBER || '-'}</div>
-                <div class="col-email">${item.EMAIL}</div>
-                <div class="col-gender">${item.GENDER_ID === 'L' ? 'Laki-Laki' : 'Perempuan'}</div>
+                <div class="col-id">${item.CUST_ID || item.cust_id}</div>
+                <div class="col-name">${item.CUST_NAME || item.cust_name}</div>
+                <div class="col-address">${item.ADDRESS || item.address || '-'}</div>
+                <div class="col-pob">${item.PLACE_OF_BIRTH || item.place_of_birth || '-'}</div>
+                <div class="col-dob">${(item.DATE_OF_BIRTH || item.date_of_birth) ? new Date(item.DATE_OF_BIRTH || item.date_of_birth).toLocaleDateString('id-ID') : '-'}</div>
+                <div class="col-contact">${item.CONTACT_NUMBER || item.contact_number || '-'}</div>
+                <div class="col-email">${item.EMAIL || item.email}</div>
+                <div class="col-gender">${(item.GENDER_ID || item.gender_id) === 'L' ? 'Laki-Laki' : 'Perempuan'}</div>
               </div>
             `).join('');
           }
@@ -200,21 +200,21 @@ import '../../css/admin.css';
       if (!datasetItem) return;
 
       const customer = JSON.parse(datasetItem);
-      currentCustomerId = customer.CUST_ID;
+      currentCustomerId = customer.CUST_ID || customer.cust_id;
       const deleteBtn = document.getElementById('deleteUserBtn') as HTMLButtonElement;
       
       const userIdInput = (document.getElementById('userId') as HTMLInputElement);
       if (userIdInput) {
-        userIdInput.value = customer.CUST_ID;
+        userIdInput.value = currentCustomerId || '';
         userIdInput.readOnly = true;
       }
-      (document.getElementById('fullName') as HTMLInputElement).value = customer.CUST_NAME || '';
-      (document.getElementById('address') as HTMLInputElement).value = customer.ADDRESS || '';
-      (document.getElementById('pob') as HTMLInputElement).value = customer.PLACE_OF_BIRTH || '';
-      (document.getElementById('dob') as HTMLInputElement).value = customer.DATE_OF_BIRTH ? customer.DATE_OF_BIRTH.split('T')[0] : '';
-      (document.getElementById('contact') as HTMLInputElement).value = customer.CONTACT_NUMBER || '';
-      (document.getElementById('email') as HTMLInputElement).value = customer.EMAIL || '';
-      (document.getElementById('gender') as HTMLSelectElement).value = customer.GENDER_ID || 'L';
+      (document.getElementById('fullName') as HTMLInputElement).value = customer.CUST_NAME || customer.cust_name || '';
+      (document.getElementById('address') as HTMLInputElement).value = customer.ADDRESS || customer.address || '';
+      (document.getElementById('pob') as HTMLInputElement).value = customer.PLACE_OF_BIRTH || customer.place_of_birth || '';
+      (document.getElementById('dob') as HTMLInputElement).value = (customer.DATE_OF_BIRTH || customer.date_of_birth) ? (customer.DATE_OF_BIRTH || customer.date_of_birth).split('T')[0] : '';
+      (document.getElementById('contact') as HTMLInputElement).value = customer.CONTACT_NUMBER || customer.contact_number || '';
+      (document.getElementById('email') as HTMLInputElement).value = customer.EMAIL || customer.email || '';
+      (document.getElementById('gender') as HTMLSelectElement).value = customer.GENDER_ID || customer.gender_id || 'L';
 
       if (deleteBtn) deleteBtn.disabled = false;
       const modal = document.getElementById('userFormModal');

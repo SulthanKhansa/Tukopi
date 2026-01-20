@@ -147,11 +147,11 @@ import '../../css/admin.css';
                 data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}'
                 onclick="editProduct(event)"
               >
-                <div class="col-id">${item.PRODUCT_ID}</div>
-                <div class="col-name">${item.PRODUCT_NAME}</div>
-                <div class="col-price">Rp ${parseFloat(item.PRICE).toLocaleString('id-ID')}</div>
-                <div class="col-category">${item.CATEGORY || 'Uncategorized'}</div>
-                <div class="col-stock">${item.STOCK || 0}</div>
+                <div class="col-id">${item.PRODUCT_ID || item.product_id}</div>
+                <div class="col-name">${item.PRODUCT_NAME || item.product_name}</div>
+                <div class="col-price">Rp ${(Number(item.PRICE || item.price) || 0).toLocaleString('id-ID')}</div>
+                <div class="col-category">${item.CATEGORY || item.category || item.CATEGORY_ID || item.category_id}</div>
+                <div class="col-stock">${item.STOCK || item.stock || 0}</div>
               </div>
             `).join('');
           }
@@ -198,14 +198,17 @@ import '../../css/admin.css';
       if (!datasetItem) return;
       
       const product = JSON.parse(datasetItem);
-      currentProductId = product.PRODUCT_ID;
+      currentProductId = product.PRODUCT_ID || product.product_id;
       const deleteBtn = document.getElementById('deleteProductBtn') as HTMLButtonElement;
       
-      (document.getElementById('productId') as HTMLInputElement).value = product.PRODUCT_ID;
-      (document.getElementById('productName') as HTMLInputElement).value = product.PRODUCT_NAME || '';
-      (document.getElementById('category') as HTMLSelectElement).value = product.CATEGORY_ID || '';
-      (document.getElementById('price') as HTMLInputElement).value = (parseInt(product.PRICE) || 0).toString();
-      (document.getElementById('stock') as HTMLInputElement).value = (product.STOCK || 0).toString();
+      const idInput = (document.getElementById('productId') as HTMLInputElement);
+      if (idInput) {
+        idInput.value = currentProductId || '';
+      }
+      (document.getElementById('productName') as HTMLInputElement).value = product.PRODUCT_NAME || product.product_name || '';
+      (document.getElementById('category') as HTMLSelectElement).value = product.CATEGORY_ID || product.category_id || '';
+      (document.getElementById('price') as HTMLInputElement).value = (parseInt(product.PRICE || product.price) || 0).toString();
+      (document.getElementById('stock') as HTMLInputElement).value = (product.STOCK || product.stock || 0).toString();
 
       if (deleteBtn) deleteBtn.disabled = false;
       const modal = document.getElementById('productFormModal');
