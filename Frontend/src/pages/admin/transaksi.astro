@@ -37,6 +37,7 @@ import '../../css/admin.css';
     <main class="admin-main">
       <div class="admin-header">
         <h1>Data Transaksi</h1>
+        <button class="btn-green" onclick="openAddModal()">+ Tambah Transaksi</button>
       </div>
 
       <div class="transactions-section">
@@ -170,15 +171,34 @@ import '../../css/admin.css';
     // Initialize
     loadTransactions();
 
+    function openAddModal() {
+      currentTrId = null;
+      document.getElementById('modalTitle')!.innerText = 'Tambah Transaksi';
+      (document.getElementById('trId') as HTMLInputElement).value = '';
+      (document.getElementById('trTotal') as HTMLInputElement).value = '';
+      (document.getElementById('trMethod') as HTMLSelectElement).value = '1';
+      (document.getElementById('trBank') as HTMLInputElement).value = '';
+      (document.getElementById('trReceipt') as HTMLInputElement).value = '';
+      
+      const deleteBtn = document.querySelector('.btn-red') as HTMLElement;
+      if (deleteBtn) deleteBtn.style.display = 'none';
+
+      document.getElementById('transactionModal')?.classList.add('active');
+    }
+
     function editTransaction(event: MouseEvent | any, tr: any) {
       if (event && event.stopPropagation) event.stopPropagation();
       currentTrId = tr.id;
+      document.getElementById('modalTitle')!.innerText = 'Edit Transaksi';
       
       (document.getElementById('trId') as HTMLInputElement).value = tr.id;
       (document.getElementById('trTotal') as HTMLInputElement).value = tr.total;
       (document.getElementById('trMethod') as HTMLSelectElement).value = tr.method_id || '1';
       (document.getElementById('trBank') as HTMLInputElement).value = tr.bank || '';
       (document.getElementById('trReceipt') as HTMLInputElement).value = tr.nomor_nota || '';
+
+      const deleteBtn = document.querySelector('.btn-red') as HTMLElement;
+      if (deleteBtn) deleteBtn.style.display = 'inline-block';
 
       document.getElementById('transactionModal')?.classList.add('active');
     }
@@ -194,10 +214,10 @@ import '../../css/admin.css';
 
       try {
         const res = await apiService.deleteOrder(currentTrId);
-        if (res.success !== false) {
+        if (res && res.success !== false) {
           window.location.reload();
         } else {
-          alert('Gagal menghapus: ' + (res.message || 'Cek koneksi'));
+          alert('Gagal menghapus: ' + (res?.message || 'Cek koneksi'));
         }
       } catch (err) {
         console.error(err);
@@ -207,9 +227,8 @@ import '../../css/admin.css';
 
     document.getElementById('transactionForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (!currentTrId) return;
 
-      const data = {
+      const data: any = {
         total: parseInt((document.getElementById('trTotal') as HTMLInputElement).value),
         methodId: (document.getElementById('trMethod') as HTMLSelectElement).value,
         bank: (document.getElementById('trBank') as HTMLInputElement).value,
@@ -217,11 +236,28 @@ import '../../css/admin.css';
       };
 
       try {
-        const res = await apiService.updateOrder(currentTrId, data);
-        if (res.success !== false) {
+        let res;
+        if (currentTrId) {
+          // Update
+          res = await apiService.updateOrder(currentTrId, data);
+        } else {
+          // Create
+          // Required for createOrder backend: { orderDate, custId, userId, methodId, total, items }
+          const createData = {
+            orderDate: new Date().toISOString().slice(0, 19).replace('T', ' '),
+            custId: '-NoName-',
+            userId: 'admin', // Or get current user
+            methodId: data.methodId,
+            total: data.total,
+            items: [] // Manual entry has no items
+          };
+          res = await apiService.createOrder(createData);
+        }
+
+        if (res && res.success !== false) {
           window.location.reload();
         } else {
-          alert('Gagal update: ' + (res.message || 'Cek koneksi'));
+          alert('Gagal menyimpan: ' + (res?.message || 'Cek koneksi'));
         }
       } catch (err) {
         console.error(err);
@@ -237,6 +273,7 @@ import '../../css/admin.css';
 
     // Globally expose
     (window as any).editTransaction = editTransaction;
+    (window as any).openAddModal = openAddModal;
     (window as any).closeModal = closeModal;
     (window as any).deleteTransaction = deleteTransaction;
   </script>
