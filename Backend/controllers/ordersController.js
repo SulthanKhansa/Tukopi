@@ -272,120 +272,120 @@ export const getDashboardReports = async (req, res) => {
     {
       title:
         "1. Produk yang paling banyak dibeli beserta jumlahnya pada tahun sebelumnya",
-      query: `SELECT p."PRODUCT_NAME", SUM(od."QTY") AS total_terjual 
-              FROM public.products p 
-              INNER JOIN public.order_details od ON p."PRODUCT_ID" = od."PRODUCT_ID"
-              WHERE od."ORDER_ID" IN (
-                  SELECT "ORDER_ID" 
-                  FROM public.orders 
-                  WHERE EXTRACT(YEAR FROM "ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
+      query: `SELECT p.PRODUCT_NAME, SUM(od.QTY) AS total_terjual 
+              FROM products p 
+              INNER JOIN order_details od ON p.PRODUCT_ID = od.PRODUCT_ID
+              WHERE od.ORDER_ID IN (
+                  SELECT ORDER_ID 
+                  FROM orders 
+                  WHERE YEAR(ORDER_DATE) = YEAR(CURDATE()) - 1
               )
-              GROUP BY p."PRODUCT_ID", p."PRODUCT_NAME"`,
+              GROUP BY p.PRODUCT_ID, p.PRODUCT_NAME`,
     },
     {
       title:
         "2. Siapa saja yang paling banyak melakukan order beserta jumlahnya pada tahun sebelumnya",
-      query: `SELECT c."CUST_NAME" as pelanggan, COUNT(o."ORDER_ID") AS total_order
-              FROM public.orders o
-              LEFT JOIN public.customers c ON o."CUST_ID" = c."CUST_ID"
-              WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
-              GROUP BY o."CUST_ID", c."CUST_NAME"`,
+      query: `SELECT c.CUST_NAME as pelanggan, COUNT(o.ORDER_ID) AS total_order
+              FROM orders o
+              LEFT JOIN customers c ON o.CUST_ID = c.CUST_ID
+              WHERE YEAR(o.ORDER_DATE) = YEAR(CURDATE()) - 1
+              GROUP BY o.CUST_ID, c.CUST_NAME`,
     },
     {
       title:
         "3. Siapa saja yang paling besar nilai ordenya beserta nominalnya pada tahun sebelumnya",
-      query: `SELECT c."CUST_NAME" as pelanggan, SUM(o."TOTAL") AS total_nominal
-              FROM public.orders o
-              LEFT JOIN public.customers c ON o."CUST_ID" = c."CUST_ID"
-              WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
-              GROUP BY o."CUST_ID", c."CUST_NAME"`,
+      query: `SELECT c.CUST_NAME as pelanggan, SUM(o.TOTAL) AS total_nominal
+              FROM orders o
+              LEFT JOIN customers c ON o.CUST_ID = c.CUST_ID
+              WHERE YEAR(o.ORDER_DATE) = YEAR(CURDATE()) - 1
+              GROUP BY o.CUST_ID, c.CUST_NAME`,
     },
     {
       title:
         "4. Siapa saja yang jumlah item produk ordernya paling banyak beserta jumlahnya pada tahun sebelumnya",
-      query: `SELECT c."CUST_NAME" as pelanggan, SUM(od."QTY") AS total_item
-              FROM public.orders o
-              LEFT JOIN public.customers c ON o."CUST_ID" = c."CUST_ID"
-              INNER JOIN public.order_details od ON o."ORDER_ID" = od."ORDER_ID"
-              WHERE od."ORDER_ID" IN (
-                  SELECT "ORDER_ID" 
-                  FROM public.orders 
-                  WHERE EXTRACT(YEAR FROM "ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
+      query: `SELECT c.CUST_NAME as pelanggan, SUM(od.QTY) AS total_item
+              FROM orders o
+              LEFT JOIN customers c ON o.CUST_ID = c.CUST_ID
+              INNER JOIN order_details od ON o.ORDER_ID = od.ORDER_ID
+              WHERE o.ORDER_ID IN (
+                  SELECT ORDER_ID 
+                  FROM orders 
+                  WHERE YEAR(ORDER_DATE) = YEAR(CURDATE()) - 1
               )
-              GROUP BY o."CUST_ID", c."CUST_NAME"`,
+              GROUP BY o.CUST_ID, c.CUST_NAME`,
     },
     {
       title: "5. 10 produk terlaris beserta jumlahnya pada tahun sebelumnya",
-      query: `SELECT p."PRODUCT_NAME", SUM(od."QTY") AS total_terjual 
-              FROM public.products p 
-              INNER JOIN public.order_details od ON p."PRODUCT_ID" = od."PRODUCT_ID"
-              WHERE od."ORDER_ID" IN (
-                  SELECT "ORDER_ID" 
-                  FROM public.orders 
-                  WHERE EXTRACT(YEAR FROM "ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
+      query: `SELECT p.PRODUCT_NAME, SUM(od.QTY) AS total_terjual 
+              FROM products p 
+              INNER JOIN order_details od ON p.PRODUCT_ID = od.PRODUCT_ID
+              WHERE od.ORDER_ID IN (
+                  SELECT ORDER_ID 
+                  FROM orders 
+                  WHERE YEAR(ORDER_DATE) = YEAR(CURDATE()) - 1
               )
-              GROUP BY p."PRODUCT_ID", p."PRODUCT_NAME"`,
+              GROUP BY p.PRODUCT_ID, p.PRODUCT_NAME
+              ORDER BY total_terjual DESC
+              LIMIT 10`,
     },
     {
       title:
         "6. tampilan profit penjualan bulanan di tahun sebelumnya untuk setiap produk",
-      query: `SELECT p."PRODUCT_NAME", EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, SUM(od."PRICE" * od."QTY") AS total_profit
-              FROM public.products p 
-              INNER JOIN public.order_details od ON p."PRODUCT_ID" = od."PRODUCT_ID"
-              INNER JOIN public.orders o ON od."ORDER_ID" = o."ORDER_ID"
-              WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
-              GROUP BY p."PRODUCT_ID", p."PRODUCT_NAME", bulan`,
+      query: `SELECT p.PRODUCT_NAME, MONTH(o.ORDER_DATE) AS bulan, SUM(od.PRICE * od.QTY) AS total_profit
+              FROM products p 
+              INNER JOIN order_details od ON p.PRODUCT_ID = od.PRODUCT_ID
+              INNER JOIN orders o ON od.ORDER_ID = o.ORDER_ID
+              WHERE YEAR(o.ORDER_DATE) = YEAR(CURDATE()) - 1
+              GROUP BY p.PRODUCT_ID, p.PRODUCT_NAME, bulan`,
     },
     {
       title:
         "7. tampilan jumlah penjualan bulanan di tahun sebelumnya untuk setiap produk",
-      query: `SELECT p."PRODUCT_NAME", EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, SUM(od."QTY") AS jumlah_terjual
-              FROM public.products p 
-              INNER JOIN public.order_details od ON p."PRODUCT_ID" = od."PRODUCT_ID"
-              INNER JOIN public.orders o ON od."ORDER_ID" = o."ORDER_ID"
-              WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
-              GROUP BY p."PRODUCT_ID", p."PRODUCT_NAME", bulan`,
+      query: `SELECT p.PRODUCT_NAME, MONTH(o.ORDER_DATE) AS bulan, SUM(od.QTY) AS jumlah_terjual
+              FROM products p 
+              INNER JOIN order_details od ON p.PRODUCT_ID = od.PRODUCT_ID
+              INNER JOIN orders o ON od.ORDER_ID = o.ORDER_ID
+              WHERE YEAR(o.ORDER_DATE) = YEAR(CURDATE()) - 1
+              GROUP BY p.PRODUCT_ID, p.PRODUCT_NAME, bulan`,
     },
     {
       title:
         "8. tampilan jumlah order bulanan di tahun sebelumnya untuk setiap customer",
-      query: `SELECT c."CUST_NAME" as pelanggan, EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, COUNT(o."ORDER_ID") AS jumlah_order
-              FROM public.orders o
-              LEFT JOIN public.customers c ON o."CUST_ID" = c."CUST_ID"
-              WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
-              GROUP BY o."CUST_ID", c."CUST_NAME", bulan`,
+      query: `SELECT c.CUST_NAME as pelanggan, MONTH(o.ORDER_DATE) AS bulan, COUNT(o.ORDER_ID) AS jumlah_order
+              FROM orders o
+              LEFT JOIN customers c ON o.CUST_ID = c.CUST_ID
+              WHERE YEAR(o.ORDER_DATE) = YEAR(CURDATE()) - 1
+              GROUP BY o.CUST_ID, c.CUST_NAME, bulan`,
     },
     {
       title:
         "9. tampilan total nominal order bulanan di tahun sebelumnya untuk setiap customer",
-      query: `SELECT c."CUST_NAME" as pelanggan, EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, SUM(o."TOTAL") AS total_nominal
-              FROM public.orders o
-              LEFT JOIN customers c ON o."CUST_ID" = c."CUST_ID"
-              WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
-              GROUP BY o."CUST_ID", c."CUST_NAME", bulan`,
+      query: `SELECT c.CUST_NAME as pelanggan, MONTH(o.ORDER_DATE) AS bulan, SUM(o.TOTAL) AS total_nominal
+              FROM orders o
+              LEFT JOIN customers c ON o.CUST_ID = c.CUST_ID
+              WHERE YEAR(o.ORDER_DATE) = YEAR(CURDATE()) - 1
+              GROUP BY o.CUST_ID, c.CUST_NAME, bulan`,
     },
     {
       title:
         "10. tampilan jumlah layanan bulanan di tahun sebelumnya untuk setiap kasir",
-      query: `SELECT k."USERNAME" AS kasir, EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, COUNT(o."ORDER_ID") AS jumlah_layanan
-              FROM public.cashiers k
-              INNER JOIN public.orders o ON k."USER_ID" = o."USER_ID"
-              WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
-              GROUP BY k."USER_ID", k."USERNAME", bulan`,
+      query: `SELECT k.USERNAME AS kasir, MONTH(o.ORDER_DATE) AS bulan, COUNT(o.ORDER_ID) AS jumlah_layanan
+              FROM cashiers k
+              INNER JOIN orders o ON k.USER_ID = o.USER_ID
+              WHERE YEAR(o.ORDER_DATE) = YEAR(CURDATE()) - 1
+              GROUP BY k.USER_ID, k.USERNAME, bulan`,
     },
   ];
 
   try {
     const results = [];
     for (const config of reportConfigs) {
-      const result = await new Promise((resolve, reject) => {
-        db.query(config.query, (err, row) => {
+      const rows = await new Promise((resolve, reject) => {
+        db.query(config.query, (err, rows) => {
           if (err) reject(err);
-          else resolve(row);
+          else resolve(rows);
         });
       });
-      // Handle difference between mysql2 (array) and pg (object with .rows)
-      const rows = result.rows || result;
       results.push({ title: config.title, data: rows });
     }
     res.json({ success: true, data: results });

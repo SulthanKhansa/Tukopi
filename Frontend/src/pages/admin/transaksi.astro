@@ -37,7 +37,7 @@ import '../../css/admin.css';
     <main class="admin-main">
       <div class="admin-header">
         <h1>Data Transaksi</h1>
-        <button class="btn-green" onclick="openAddModal()">+ Tambah Transaksi</button>
+        <button class="btn-baru" onclick="openTransactionModal()">Baru</button>
       </div>
 
       <div class="transactions-section">
@@ -65,20 +65,22 @@ import '../../css/admin.css';
     </main>
   </div>
 
-  <!-- Modal Edit Transaksi -->
-  <div id="transactionModal" class="modal">
+  <!-- Modal Form -->
+  <div id="transactionFormModal" class="modal">
     <div class="modal-content">
-      <h2 id="modalTitle">Edit Transaksi</h2>
       <form id="transactionForm">
-        <input type="hidden" id="trId" />
+        <div class="form-row">
+          <label for="trId">ID</label>
+          <input type="text" id="trId" readonly />
+        </div>
         
         <div class="form-row">
-          <label>Total Pembayaran (IDR)</label>
+          <label for="trTotal">Total Pembayaran (IDR)</label>
           <input type="number" id="trTotal" required />
         </div>
 
         <div class="form-row">
-          <label>Metode Pembayaran</label>
+          <label for="trMethod">Metode Pembayaran</label>
           <select id="trMethod">
             <option value="1">CASH</option>
             <option value="2">QRIS</option>
@@ -87,19 +89,19 @@ import '../../css/admin.css';
         </div>
 
         <div class="form-row">
-          <label>Bank (Jika Transfer)</label>
+          <label for="trBank">Bank (Jika Transfer)</label>
           <input type="text" id="trBank" />
         </div>
 
         <div class="form-row">
-          <label>Nomor Nota / Referensi</label>
+          <label for="trReceipt">Nomor Nota / Referensi</label>
           <input type="text" id="trReceipt" />
         </div>
 
         <div class="form-actions-centered">
-          <button type="submit" class="btn-green">Simpan Perubahan</button>
-          <button type="button" class="btn-red" onclick="deleteTransaction()">Hapus Transaksi</button>
-          <button type="button" class="btn-gray" onclick="closeModal()">Batal</button>
+          <button type="submit" class="btn-green">Simpan</button>
+          <button type="button" class="btn-red" id="deleteTransactionBtn" onclick="deleteTransaction()" disabled>Hapus</button>
+          <button type="button" class="btn-gray" onclick="closeTransactionModal()">Batal</button>
         </div>
       </form>
     </div>
@@ -127,7 +129,8 @@ import '../../css/admin.css';
             tableBody.innerHTML = transactions.map((tr: any) => `
               <div 
                 class="transaction-card dashboard-grid" 
-                onclick='editTransaction(event, ${JSON.stringify(tr).replace(/'/g, "&apos;")})'
+                data-item='${JSON.stringify(tr).replace(/'/g, "&apos;")}'
+                onclick='editTransaction(event)'
                 style="cursor: pointer;"
               >
                 <div class="col-id">#${tr.id}</div>
@@ -165,25 +168,38 @@ import '../../css/admin.css';
     // Initialize
     loadTransactions();
 
-    function openAddModal() {
-      currentTrId = null;
-      document.getElementById('modalTitle')!.innerText = 'Tambah Transaksi';
-      (document.getElementById('trId') as HTMLInputElement).value = '';
-      (document.getElementById('trTotal') as HTMLInputElement).value = '';
-      (document.getElementById('trMethod') as HTMLSelectElement).value = '1';
-      (document.getElementById('trBank') as HTMLInputElement).value = '';
-      (document.getElementById('trReceipt') as HTMLInputElement).value = '';
+    function openTransactionModal() {
+      const modal = document.getElementById('transactionFormModal');
+      const form = document.getElementById('transactionForm') as HTMLFormElement;
+      const deleteBtn = document.getElementById('deleteTransactionBtn') as HTMLButtonElement;
       
-      const deleteBtn = document.querySelector('.btn-red') as HTMLElement;
-      if (deleteBtn) deleteBtn.style.display = 'none';
+      if (!modal || !form) return;
 
-      document.getElementById('transactionModal')?.classList.add('active');
+      currentTrId = null;
+      form.reset();
+      (document.getElementById('trId') as HTMLInputElement).value = '';
+      (document.getElementById('trId') as HTMLInputElement).placeholder = 'Auto-Increment';
+      if (deleteBtn) deleteBtn.disabled = true;
+      modal.classList.add('active');
     }
 
-    function editTransaction(event: MouseEvent | any, tr: any) {
+    function closeTransactionModal() {
+      const modal = document.getElementById('transactionFormModal');
+      if (modal) {
+        modal.classList.remove('active');
+      }
+      const trId = document.getElementById('trId') as HTMLInputElement;
+      if (trId) trId.placeholder = '';
+      currentTrId = null;
+    }
+
+    function editTransaction(event: any) {
       if (event && event.stopPropagation) event.stopPropagation();
+      const datasetItem = event.currentTarget.dataset.item;
+      if (!datasetItem) return;
+      
+      const tr = JSON.parse(datasetItem);
       currentTrId = tr.id;
-      document.getElementById('modalTitle')!.innerText = 'Edit Transaksi';
       
       (document.getElementById('trId') as HTMLInputElement).value = tr.id;
       (document.getElementById('trTotal') as HTMLInputElement).value = tr.total;
@@ -191,15 +207,11 @@ import '../../css/admin.css';
       (document.getElementById('trBank') as HTMLInputElement).value = tr.bank || '';
       (document.getElementById('trReceipt') as HTMLInputElement).value = tr.nomor_nota || '';
 
-      const deleteBtn = document.querySelector('.btn-red') as HTMLElement;
-      if (deleteBtn) deleteBtn.style.display = 'inline-block';
+      const deleteBtn = document.getElementById('deleteTransactionBtn') as HTMLButtonElement;
+      if (deleteBtn) deleteBtn.disabled = false;
 
-      document.getElementById('transactionModal')?.classList.add('active');
-    }
-
-    function closeModal() {
-      document.getElementById('transactionModal')?.classList.remove('active');
-      currentTrId = null;
+      const modal = document.getElementById('transactionFormModal');
+      if (modal) modal.classList.add('active');
     }
 
     async function deleteTransaction() {
@@ -260,15 +272,15 @@ import '../../css/admin.css';
     });
 
     // Handle outside click
-    const modal = document.getElementById('transactionModal');
+    const modal = document.getElementById('transactionFormModal');
     modal?.addEventListener('click', (e) => {
-      if (e.target === modal) closeModal();
+      if (e.target === modal) closeTransactionModal();
     });
 
     // Globally expose
     (window as any).editTransaction = editTransaction;
-    (window as any).openAddModal = openAddModal;
-    (window as any).closeModal = closeModal;
+    (window as any).openTransactionModal = openTransactionModal;
+    (window as any).closeTransactionModal = closeTransactionModal;
     (window as any).deleteTransaction = deleteTransaction;
   </script>
 </Layout>
