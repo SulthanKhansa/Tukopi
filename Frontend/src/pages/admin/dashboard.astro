@@ -6,7 +6,6 @@ import '../../css/admin.css';
 
 const dashboardData = await apiService.getAdminDashboard();
 const stats = dashboardData?.stats || { total_customers: 0, total_products: 0, total_orders: 0 };
-const transactions = (dashboardData?.transactions || []) as any[];
 ---
 
 <Layout title="Admin Dashboard - TUKO" isAdmin={true}>
@@ -72,31 +71,6 @@ const transactions = (dashboardData?.transactions || []) as any[];
           </div>
         </div>
       </div>
-
-      <!-- Recent Transactions -->
-      <div class="transactions-section">
-        <h2 class="section-title">Transaksi Terakhir</h2>
-        <div class="table-scroll-wrapper">
-          <div class="table-container">
-            <div class="table-header dashboard-grid">
-              <div class="col-id">ID</div>
-              <div class="col-date">Tanggal</div>
-              <div class="col-customer">Pelanggan</div>
-              <div class="col-cashier">Kasir</div>
-              <div class="col-total">Total</div>
-              <div class="col-method">Metode</div>
-              <div class="col-bank">Bank</div>
-              <div class="col-receipt">Nota</div>
-            </div>
-            
-            <div class="table-body" id="recentTableBody">
-              <div class="transaction-card empty dashboard-grid">
-                <span>Memuat data...</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </main>
   </div>
 
@@ -108,7 +82,6 @@ const transactions = (dashboardData?.transactions || []) as any[];
       try {
         const data = await apiService.getAdminDashboard();
         const stats = data?.stats || { total_customers: 0, total_products: 0, total_orders: 0 };
-        const transactions = data?.transactions || [];
 
         // Update Stats
         const tc = document.getElementById('totalCustomers');
@@ -117,27 +90,6 @@ const transactions = (dashboardData?.transactions || []) as any[];
         if (tp) tp.innerText = stats.total_products || 0;
         const to = document.getElementById('totalOrders');
         if (to) to.innerText = stats.total_orders || 0;
-
-        // Update Table
-        const container = document.getElementById('recentTableBody');
-        if (container) {
-          if (transactions.length === 0) {
-            container.innerHTML = `<div class="transaction-card empty dashboard-grid"><span>Belum ada transaksi terakhir</span></div>`;
-          } else {
-            container.innerHTML = transactions.map((tr: any) => `
-              <div class="transaction-card dashboard-grid">
-                <div class="col-id">#${tr.id}</div>
-                <div class="col-date">${new Date(tr.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
-                <div class="col-customer">${tr.pelanggan || '-'}</div>
-                <div class="col-cashier">${tr.kasir || '-'}</div>
-                <div class="col-total">${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(tr.total || 0))}</div>
-                <div class="col-method">${tr.metode_pembayaran || '-'}</div>
-                <div class="col-bank">${tr.bank || '-'}</div>
-                <div class="col-receipt">${tr.nomor_nota || '-'}</div>
-              </div>
-            `).join('');
-          }
-        }
         
         // Re-init icons
         feather.replace();
