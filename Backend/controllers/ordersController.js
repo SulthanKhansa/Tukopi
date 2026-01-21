@@ -235,7 +235,7 @@ export const createOrder = async (req, res) => {
 export const getDashboardReports = async (req, res) => {
   const reportConfigs = [
     {
-      title: "Produk Paling Banyak Dibeli",
+      title: "1. Produk yang paling banyak dibeli beserta jumlahnya pada tahun sebelumnya",
       query: `SELECT p."PRODUCT_NAME", SUM(od."QTY") AS total_terjual 
               FROM public.products p 
               INNER JOIN public.order_details od ON p."PRODUCT_ID" = od."PRODUCT_ID"
@@ -247,7 +247,7 @@ export const getDashboardReports = async (req, res) => {
               GROUP BY p."PRODUCT_ID", p."PRODUCT_NAME"`,
     },
     {
-      title: "Customer dengan Frekuensi Order Terbanyak",
+      title: "2. Siapa saja yang paling banyak melakukan order beserta jumlahnya pada tahun sebelumnya",
       query: `SELECT c."CUST_NAME" as pelanggan, COUNT(o."ORDER_ID") AS total_order
               FROM public.orders o
               LEFT JOIN public.customers c ON o."CUST_ID" = c."CUST_ID"
@@ -255,7 +255,7 @@ export const getDashboardReports = async (req, res) => {
               GROUP BY o."CUST_ID", c."CUST_NAME"`,
     },
     {
-      title: "Customer dengan Nilai Order Tertinggi",
+      title: "3. Siapa saja yang paling besar nilai ordenya beserta nominalnya pada tahun sebelumnya",
       query: `SELECT c."CUST_NAME" as pelanggan, SUM(o."TOTAL") AS total_nominal
               FROM public.orders o
               LEFT JOIN public.customers c ON o."CUST_ID" = c."CUST_ID"
@@ -263,7 +263,7 @@ export const getDashboardReports = async (req, res) => {
               GROUP BY o."CUST_ID", c."CUST_NAME"`,
     },
     {
-      title: "Customer dengan Jumlah Item Terbanyak",
+      title: "4. Siapa saja yang jumlah item produk ordernya paling banyak beserta jumlahnya pada tahun sebelumnya",
       query: `SELECT c."CUST_NAME" as pelanggan, SUM(od."QTY") AS total_item
               FROM public.orders o
               LEFT JOIN public.customers c ON o."CUST_ID" = c."CUST_ID"
@@ -276,7 +276,7 @@ export const getDashboardReports = async (req, res) => {
               GROUP BY o."CUST_ID", c."CUST_NAME"`,
     },
     {
-      title: "10 Produk Terlaris",
+      title: "5. 10 produk terlaris beserta jumlahnya pada tahun sebelumnya",
       query: `SELECT p."PRODUCT_NAME", SUM(od."QTY") AS total_terjual 
               FROM public.products p 
               INNER JOIN public.order_details od ON p."PRODUCT_ID" = od."PRODUCT_ID"
@@ -288,7 +288,7 @@ export const getDashboardReports = async (req, res) => {
               GROUP BY p."PRODUCT_ID", p."PRODUCT_NAME"`,
     },
     {
-      title: "Profit Penjualan Bulanan (Per Produk)",
+      title: "6. tampilan profit penjualan bulanan di tahun sebelumnya untuk setiap produk",
       query: `SELECT p."PRODUCT_NAME", EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, SUM(od."PRICE" * od."QTY") AS total_profit
               FROM public.products p 
               INNER JOIN public.order_details od ON p."PRODUCT_ID" = od."PRODUCT_ID"
@@ -297,7 +297,7 @@ export const getDashboardReports = async (req, res) => {
               GROUP BY p."PRODUCT_ID", p."PRODUCT_NAME", bulan`,
     },
     {
-      title: "Jumlah Penjualan Bulanan (Per Produk)",
+      title: "7. tampilan jumlah penjualan bulanan di tahun sebelumnya untuk setiap produk",
       query: `SELECT p."PRODUCT_NAME", EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, SUM(od."QTY") AS jumlah_terjual
               FROM public.products p 
               INNER JOIN public.order_details od ON p."PRODUCT_ID" = od."PRODUCT_ID"
@@ -306,7 +306,7 @@ export const getDashboardReports = async (req, res) => {
               GROUP BY p."PRODUCT_ID", p."PRODUCT_NAME", bulan`,
     },
     {
-      title: "Jumlah Order Bulanan (Per Customer)",
+      title: "8. tampilan jumlah order bulanan di tahun sebelumnya untuk setiap customer",
       query: `SELECT c."CUST_NAME" as pelanggan, EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, COUNT(o."ORDER_ID") AS jumlah_order
               FROM public.orders o
               LEFT JOIN public.customers c ON o."CUST_ID" = c."CUST_ID"
@@ -314,7 +314,7 @@ export const getDashboardReports = async (req, res) => {
               GROUP BY o."CUST_ID", c."CUST_NAME", bulan`,
     },
     {
-      title: "Total Nominal Order Bulanan (Per Customer)",
+      title: "9. tampilan total nominal order bulanan di tahun sebelumnya untuk setiap customer",
       query: `SELECT c."CUST_NAME" as pelanggan, EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, SUM(o."TOTAL") AS total_nominal
               FROM public.orders o
               LEFT JOIN customers c ON o."CUST_ID" = c."CUST_ID"
@@ -322,7 +322,7 @@ export const getDashboardReports = async (req, res) => {
               GROUP BY o."CUST_ID", c."CUST_NAME", bulan`,
     },
     {
-      title: "Jumlah Layanan Bulanan (Per Kasir)",
+      title: "10. tampilan jumlah layanan bulanan di tahun sebelumnya untuk setiap kasir",
       query: `SELECT k."USERNAME" AS kasir, EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, COUNT(o."ORDER_ID") AS jumlah_layanan
               FROM public.cashiers k
               INNER JOIN public.orders o ON k."USER_ID" = o."USER_ID"
