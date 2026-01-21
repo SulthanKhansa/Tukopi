@@ -64,6 +64,11 @@
   border-right-color: #ffb84c;
 }
 
+.sidebar-item:hover:not(.active):not(.logout-item) {
+  background-color: #f9f9f9;
+  color: #ffb84c;
+}
+
 .sidebar-item :global(svg) {
   width: 24px;
   height: 24px;

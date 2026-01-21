@@ -71,6 +71,15 @@ const stats = dashboardData?.stats || { total_customers: 0, total_products: 0, t
           </div>
         </div>
       </div>
+
+      <!-- Reports Section -->
+      <div class="reports-container">
+        <h2 class="section-title">Laporan Analisis (Tahun Sebelumnya)</h2>
+        <div class="reports-grid" id="reportsGrid">
+          <!-- Reports will be injected here -->
+          <p>Memuat laporan...</p>
+        </div>
+      </div>
     </main>
   </div>
 
@@ -85,17 +94,71 @@ const stats = dashboardData?.stats || { total_customers: 0, total_products: 0, t
 
         // Update Stats
         const tc = document.getElementById('totalCustomers');
-        if (tc) tc.innerText = stats.total_customers || 0;
+        if (tc) tc.innerText = (stats as any).totalCustomers || stats.total_customers || 0;
         const tp = document.getElementById('totalProducts');
-        if (tp) tp.innerText = stats.total_products || 0;
+        if (tp) tp.innerText = (stats as any).totalProductsSold || stats.total_products || 0;
         const to = document.getElementById('totalOrders');
         if (to) to.innerText = stats.total_orders || 0;
         
+        // Load Reports
+        const reports = await apiService.getDashboardReports();
+        renderReports(reports);
+
         // Re-init icons
         feather.replace();
       } catch (err) {
         console.error(err);
       }
+    }
+
+    function renderReports(reports: any) {
+      const grid = document.getElementById('reportsGrid');
+      if (!grid) return;
+
+      if (!Array.isArray(reports) || reports.length === 0) {
+        grid.innerHTML = '<p>Tidak ada data laporan untuk tahun sebelumnya.</p>';
+        return;
+      }
+
+      grid.innerHTML = reports.map((report: any) => {
+        const data = report.data || [];
+        const title = report.title || "Laporan";
+        
+        // Get headers from first entry
+        const headers = data.length > 0 ? Object.keys(data[0]) : [];
+        
+        return `
+          <div class="report-card">
+            <h3>${title}</h3>
+            <div class="report-table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    ${headers.map(h => `<th>${h.replace(/_/g, ' ')}</th>`).join('')}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${data.length > 0 ? data.map((row: any) => `
+                    <tr>
+                      ${headers.map(h => {
+                        let val = row[h];
+                        const keyLower = h.toLowerCase();
+                        if (keyLower.includes('total') || keyLower.includes('profit') || keyLower.includes('nominal')) {
+                          const numVal = Number(val);
+                          if (!isNaN(numVal)) {
+                             val = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(numVal);
+                          }
+                        }
+                        return `<td>${val}</td>`;
+                      }).join('')}
+                    </tr>
+                  `).join('') : '<tr><td colspan="100%">Tidak ada data</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     loadDashboard();

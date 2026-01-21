@@ -72,6 +72,17 @@ export const apiService = {
     return await this.fetchAdmin("/orders/dashboard/stats");
   },
 
+  async getDashboardReports() {
+    if (isProduction) {
+      // For production, we might need a separate Netlify function or endpoint
+      // For now, return empty or try to fetch from same base
+      const json = await this.safeFetch(`${getFunctionsUrl()}/orders/reports`);
+      return json?.data || {};
+    }
+    const res = await this.fetchAdmin("/orders/dashboard/reports");
+    return res?.data || {};
+  },
+
   async getAdminOrders() {
     if (isProduction) {
       const json = await this.safeFetch(`${getFunctionsUrl()}/orders`);

@@ -3,6 +3,7 @@ import {
   getOrders,
   getOrderDetails,
   getDashboardStats,
+  getDashboardReports,
   createOrder,
 } from "../controllers/ordersController.js";
 
@@ -13,6 +14,9 @@ router.get("/", getOrders);
 
 // Route Dashboard (Stats)
 router.get("/dashboard/stats", getDashboardStats);
+
+// Route Dashboard Reports (10 Analysis)
+router.get("/dashboard/reports", getDashboardReports);
 
 // Route Create Order
 router.post("/", createOrder);

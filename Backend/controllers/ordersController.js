@@ -230,3 +230,123 @@ export const createOrder = async (req, res) => {
     });
   });
 };
+
+// 5. Dashboard Reports (10 Analysis Queries)
+export const getDashboardReports = async (req, res) => {
+  const reportConfigs = [
+    {
+      title: "Produk Paling Banyak Dibeli",
+      query: `SELECT p."PRODUCT_NAME", SUM(od."QTY") AS total_terjual 
+              FROM public.products p 
+              INNER JOIN public.order_details od ON p."PRODUCT_ID" = od."PRODUCT_ID"
+              WHERE od."ORDER_ID" IN (
+                  SELECT "ORDER_ID" 
+                  FROM public.orders 
+                  WHERE EXTRACT(YEAR FROM "ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
+              )
+              GROUP BY p."PRODUCT_ID", p."PRODUCT_NAME"`,
+    },
+    {
+      title: "Customer dengan Frekuensi Order Terbanyak",
+      query: `SELECT c."CUST_NAME" as pelanggan, COUNT(o."ORDER_ID") AS total_order
+              FROM public.orders o
+              LEFT JOIN public.customers c ON o."CUST_ID" = c."CUST_ID"
+              WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
+              GROUP BY o."CUST_ID", c."CUST_NAME"`,
+    },
+    {
+      title: "Customer dengan Nilai Order Tertinggi",
+      query: `SELECT c."CUST_NAME" as pelanggan, SUM(o."TOTAL") AS total_nominal
+              FROM public.orders o
+              LEFT JOIN public.customers c ON o."CUST_ID" = c."CUST_ID"
+              WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
+              GROUP BY o."CUST_ID", c."CUST_NAME"`,
+    },
+    {
+      title: "Customer dengan Jumlah Item Terbanyak",
+      query: `SELECT c."CUST_NAME" as pelanggan, SUM(od."QTY") AS total_item
+              FROM public.orders o
+              LEFT JOIN public.customers c ON o."CUST_ID" = c."CUST_ID"
+              INNER JOIN public.order_details od ON o."ORDER_ID" = od."ORDER_ID"
+              WHERE od."ORDER_ID" IN (
+                  SELECT "ORDER_ID" 
+                  FROM public.orders 
+                  WHERE EXTRACT(YEAR FROM "ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
+              )
+              GROUP BY o."CUST_ID", c."CUST_NAME"`,
+    },
+    {
+      title: "10 Produk Terlaris",
+      query: `SELECT p."PRODUCT_NAME", SUM(od."QTY") AS total_terjual 
+              FROM public.products p 
+              INNER JOIN public.order_details od ON p."PRODUCT_ID" = od."PRODUCT_ID"
+              WHERE od."ORDER_ID" IN (
+                  SELECT "ORDER_ID" 
+                  FROM public.orders 
+                  WHERE EXTRACT(YEAR FROM "ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
+              )
+              GROUP BY p."PRODUCT_ID", p."PRODUCT_NAME"`,
+    },
+    {
+      title: "Profit Penjualan Bulanan (Per Produk)",
+      query: `SELECT p."PRODUCT_NAME", EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, SUM(od."PRICE" * od."QTY") AS total_profit
+              FROM public.products p 
+              INNER JOIN public.order_details od ON p."PRODUCT_ID" = od."PRODUCT_ID"
+              INNER JOIN public.orders o ON od."ORDER_ID" = o."ORDER_ID"
+              WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
+              GROUP BY p."PRODUCT_ID", p."PRODUCT_NAME", bulan`,
+    },
+    {
+      title: "Jumlah Penjualan Bulanan (Per Produk)",
+      query: `SELECT p."PRODUCT_NAME", EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, SUM(od."QTY") AS jumlah_terjual
+              FROM public.products p 
+              INNER JOIN public.order_details od ON p."PRODUCT_ID" = od."PRODUCT_ID"
+              INNER JOIN public.orders o ON od."ORDER_ID" = o."ORDER_ID"
+              WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
+              GROUP BY p."PRODUCT_ID", p."PRODUCT_NAME", bulan`,
+    },
+    {
+      title: "Jumlah Order Bulanan (Per Customer)",
+      query: `SELECT c."CUST_NAME" as pelanggan, EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, COUNT(o."ORDER_ID") AS jumlah_order
+              FROM public.orders o
+              LEFT JOIN public.customers c ON o."CUST_ID" = c."CUST_ID"
+              WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
+              GROUP BY o."CUST_ID", c."CUST_NAME", bulan`,
+    },
+    {
+      title: "Total Nominal Order Bulanan (Per Customer)",
+      query: `SELECT c."CUST_NAME" as pelanggan, EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, SUM(o."TOTAL") AS total_nominal
+              FROM public.orders o
+              LEFT JOIN customers c ON o."CUST_ID" = c."CUST_ID"
+              WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
+              GROUP BY o."CUST_ID", c."CUST_NAME", bulan`,
+    },
+    {
+      title: "Jumlah Layanan Bulanan (Per Kasir)",
+      query: `SELECT k."USERNAME" AS kasir, EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, COUNT(o."ORDER_ID") AS jumlah_layanan
+              FROM public.cashiers k
+              INNER JOIN public.orders o ON k."USER_ID" = o."USER_ID"
+              WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM SYSDATE()) - 1
+              GROUP BY k."USER_ID", k."USERNAME", bulan`,
+    },
+  ];
+
+  try {
+    const results = [];
+    for (const config of reportConfigs) {
+      const result = await new Promise((resolve, reject) => {
+        db.query(config.query, (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        });
+      });
+      // Handle difference between mysql2 (array) and pg (object with .rows)
+      const rows = result.rows || result;
+      results.push({ title: config.title, data: rows });
+    }
+    res.json({ success: true, data: results });
+  } catch (err) {
+    console.error("Dashboard Reports Error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
