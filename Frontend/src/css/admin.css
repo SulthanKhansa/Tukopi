@@ -1,10 +1,84 @@
 /* Global Styles for Admin */
 .admin-container {
-  display: block;
+  display: flex;
   min-height: calc(100vh - 100px);
   width: 100%;
   margin: 0;
   position: relative;
+}
+
+.mobile-admin-toggle {
+  display: none;
+  background-color: #ffb84c;
+  color: #000;
+  border: none;
+  padding: 10px 20px;
+  font-family: "Jua", sans-serif;
+  font-size: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  width: fit-content;
+}
+
+@media (max-width: 1024px) {
+  .admin-sidebar {
+    width: 240px;
+  }
+  .admin-main {
+    margin-left: 240px;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-container {
+    flex-direction: column;
+  }
+
+  .admin-sidebar {
+    position: fixed;
+    top: 80px; /* Reduced header height on mobile */
+    left: 0;
+    width: 100%;
+    max-width: 280px;
+    height: calc(100vh - 80px);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 200;
+  }
+
+  .admin-sidebar.active {
+    transform: translateX(0);
+  }
+
+  .admin-main {
+    margin-left: 0;
+    padding: 20px;
+  }
+
+  .mobile-admin-toggle {
+    display: flex;
+  }
+
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .stats-container {
+    grid-template-columns: 1fr;
+  }
+
+  .table-scroll-wrapper {
+    overflow-x: auto;
+  }
+
+  .table-container {
+    min-width: 800px;
+  }
 }
 
 /* Sidebar */

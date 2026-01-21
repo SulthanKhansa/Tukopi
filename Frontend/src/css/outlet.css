@@ -101,6 +101,64 @@
   padding: 14px 16px;
 }
 
+@media (max-width: 768px) {
+  .outlet-section {
+    padding: 40px 0;
+  }
+
+  .outlet-container {
+    padding: 0 20px;
+  }
+
+  .carousel-wrapper {
+    height: 300px;
+  }
+
+  .carousel-slide {
+    width: 100%;
+    left: 0;
+  }
+
+  .outlet-image {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .nav-btn {
+    font-size: 24px;
+    padding: 5px 10px;
+  }
+
+  .nav-btn svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .outlet-name {
+    font-size: 28px;
+    padding: 10px;
+  }
+
+  .outlet-address {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .outlet-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-item {
+    border-right: none;
+    border-bottom: 2px solid #fff;
+  }
+
+  .footer-item:last-child {
+    border-bottom: none;
+  }
+}
+
 .outlet-footer {
   display: grid;
   grid-template-columns: 1fr 1fr;

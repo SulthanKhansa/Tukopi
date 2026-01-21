@@ -40,6 +40,10 @@ const cashiers = await apiService.getAdminCashiers() as any[];
 
     <!-- Main Content -->
     <main class="admin-main">
+      <button class="mobile-admin-toggle" id="sidebarToggle">
+        <i data-feather="menu"></i> Menu Admin
+      </button>
+
       <div class="admin-header">
         <h1>Data Kasir</h1>
         <button class="btn-baru" onclick="openKasirModal()">Baru</button>
@@ -128,13 +132,25 @@ const cashiers = await apiService.getAdminCashiers() as any[];
 
   <script>
     import { apiService } from '../../lib/apiService.js';
+    import feather from 'feather-icons';
 
     let currentKasirId: string | null = null;
     let allCashiers: any[] = [];
 
+    // Sidebar Toggle for Mobile
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.admin-sidebar');
+    
+    if (sidebarToggle && sidebar) {
+      sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+      });
+    }
+
     async function loadCashiers() {
       const container = document.getElementById('kasirTableBody');
       try {
+        feather.replace();
         const data = await apiService.getAdminCashiers();
         allCashiers = data || [];
         

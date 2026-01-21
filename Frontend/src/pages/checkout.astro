@@ -99,6 +99,7 @@ const getProductImage = (name: string) => {
 
   let dbProducts = {};
   let cart = {};
+  let cashiers = [];
 
   function renderProducts(products) {
     const list = document.getElementById('products-list');
@@ -135,12 +136,19 @@ const getProductImage = (name: string) => {
   async function loadProducts() {
     try {
       const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-      const url = isProduction ? "/.netlify/functions/products" : "http://127.0.0.1:5000/api/products";
+      const productsUrl = isProduction ? "/.netlify/functions/products" : "http://127.0.0.1:5000/api/products";
+      const cashiersUrl = isProduction ? "/.netlify/functions/cashiers" : "http://127.0.0.1:5000/api/cashiers";
       
-      const response = await fetch(url);
-      const result = await response.json();
+      const [pRes, cRes] = await Promise.all([
+        fetch(productsUrl),
+        fetch(cashiersUrl)
+      ]);
       
-      const products = result.data || [];
+      const pResult = await pRes.json();
+      const cResult = await cRes.json();
+      
+      const products = pResult.data || [];
+      cashiers = cResult.data || [];
       
       products.forEach(p => {
         dbProducts[p.PRODUCT_ID] = {
@@ -242,6 +250,11 @@ const getProductImage = (name: string) => {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       const methodMap = { 'tunai': '1', 'transfer': '2', 'qris': '3' };
 
+      // Pick a random cashier from the loaded list, or fallback to default
+      const randomCashierId = cashiers.length > 0 
+        ? (cashiers[Math.floor(Math.random() * cashiers.length)].USER_ID || cashiers[Math.floor(Math.random() * cashiers.length)].user_id)
+        : '12345678';
+
       try {
         const response = await fetch(window.location.hostname !== 'localhost' ? '/.netlify/functions/orders' : 'http://localhost:5000/api/orders', {
           method: 'POST',
@@ -249,7 +262,7 @@ const getProductImage = (name: string) => {
           body: JSON.stringify({
             orderDate,
             custId: user.id || '-NoName-',
-            userId: '12345678',
+            userId: randomCashierId,
             methodId: methodMap[selectedMethod],
             total: totalValue,
             items

@@ -92,3 +92,100 @@
   font-family: "Irish Grover", cursive;
   font-size: 20px;
 }
+
+/* Hamburger Menu */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  z-index: 101;
+  background: none;
+  border: none;
+  padding: 10px;
+}
+
+.hamburger span {
+  width: 30px;
+  height: 3px;
+  background-color: white;
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 1024px) {
+  .logo img {
+    width: 180px;
+    height: 56px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    height: 80px;
+  }
+
+  .header-container {
+    padding: 0 20px;
+  }
+
+  .logo img {
+    width: 140px;
+    height: 44px;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+
+  .nav-menu {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 80%;
+    height: 100vh;
+    background-color: #4a4a4a;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: right 0.3s ease;
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+  }
+
+  .nav-menu.active {
+    right: 0;
+  }
+
+  .nav-links-wrapper {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .nav-links {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .nav-link {
+    font-size: 24px;
+  }
+
+  .profile-section {
+    flex-direction: column;
+    margin-top: 20px;
+  }
+
+  /* Hamburger Animation when Active */
+  .hamburger.active span:nth-child(1) {
+    transform: rotate(45deg) translate(7px, 7px);
+  }
+
+  .hamburger.active span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .hamburger.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(6px, -6px);
+  }
+}

@@ -41,6 +41,10 @@ const stats = dashboardData?.stats || { total_customers: 0, total_products: 0, t
 
     <!-- Main Content -->
     <main class="admin-main">
+      <button class="mobile-admin-toggle" id="sidebarToggle">
+        <i data-feather="menu"></i> Menu Admin
+      </button>
+      
       <div class="admin-header">
         <h1>Dashboard</h1>
       </div>
@@ -88,6 +92,16 @@ const stats = dashboardData?.stats || { total_customers: 0, total_products: 0, t
     import feather from 'feather-icons';
 
     async function loadDashboard() {
+      // Sidebar Toggle for Mobile
+      const sidebarToggle = document.getElementById('sidebarToggle');
+      const sidebar = document.querySelector('.admin-sidebar');
+      
+      if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', () => {
+          sidebar.classList.toggle('active');
+        });
+      }
+
       try {
         const data = await apiService.getAdminDashboard();
         const stats = data?.stats || { total_customers: 0, total_products: 0, total_orders: 0 };

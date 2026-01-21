@@ -37,6 +37,10 @@ import '../../css/admin.css';
 
     <!-- Main Content -->
     <main class="admin-main">
+      <button class="mobile-admin-toggle" id="sidebarToggle">
+        <i data-feather="menu"></i> Menu Admin
+      </button>
+
       <div class="admin-header">
         <h1>Data Produk</h1>
         <button class="btn-baru" onclick="openProductModal()">Baru</button>
@@ -105,16 +109,28 @@ import '../../css/admin.css';
 
   <script>
     import { apiService } from '../../lib/apiService.js';
+    import feather from 'feather-icons';
 
     let currentProductId: string | null = null;
     let products: any[] = [];
     let categories: any[] = [];
+
+    // Sidebar Toggle for Mobile
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.admin-sidebar');
+    
+    if (sidebarToggle && sidebar) {
+      sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+      });
+    }
 
     async function loadData() {
       const tableBody = document.getElementById('table-body');
       const categorySelect = document.getElementById('category') as HTMLSelectElement;
 
       try {
+        feather.replace();
         const [productsData, categoriesData] = await Promise.all([
           apiService.getAdminProducts(),
           apiService.getCategories()

@@ -137,3 +137,39 @@ input:focus {
 .auth-redirect-link a:hover {
   text-decoration: underline;
 }
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 20px;
+  }
+
+  .logo img {
+    height: 80px;
+  }
+
+  .disclaimer {
+    font-size: 12px;
+  }
+
+  input {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 20px;
+  }
+
+  .logo img {
+    height: 80px;
+  }
+
+  .disclaimer {
+    font-size: 12px;
+  }
+
+  input {
+    font-size: 13px;
+  }
+}

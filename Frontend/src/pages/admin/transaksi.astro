@@ -35,6 +35,10 @@ import '../../css/admin.css';
     </aside>
 
     <main class="admin-main">
+      <button class="mobile-admin-toggle" id="sidebarToggle">
+        <i data-feather="menu"></i> Menu Admin
+      </button>
+
       <div class="admin-header">
         <h1>Data Transaksi</h1>
         <button class="btn-baru" onclick="openTransactionModal()">Baru</button>
@@ -109,13 +113,25 @@ import '../../css/admin.css';
 
   <script>
     import { apiService } from '../../lib/apiService.js';
+    import feather from 'feather-icons';
 
     let currentTrId: string | number | null = null;
     let transactions: any[] = [];
 
+    // Sidebar Toggle for Mobile
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.admin-sidebar');
+    
+    if (sidebarToggle && sidebar) {
+      sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+      });
+    }
+
     async function loadTransactions() {
       const tableBody = document.getElementById('table-body');
       try {
+        feather.replace();
         const data = await apiService.getAdminOrders();
         transactions = Array.isArray(data) ? data : [];
 

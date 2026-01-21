@@ -140,8 +140,46 @@
 }
 
 @media (max-width: 1024px) {
+  .menu-section {
+    background: #a8b88a;
+  }
+
   .menu-container {
     grid-template-columns: 1fr;
     min-height: auto;
+  }
+
+  .menu-left {
+    padding: 40px 20px;
+  }
+
+  .menu-right {
+    height: 400px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .product-showcase {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-height: none;
+    padding-right: 0;
+    padding-bottom: 20px;
+    justify-content: flex-start;
+  }
+
+  .showcase-item {
+    width: 200px;
+    max-width: none;
+  }
+
+  .showcase-item img {
+    height: 200px;
+  }
+
+  .menu-right {
+    height: 300px;
   }
 }

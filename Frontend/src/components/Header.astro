@@ -15,7 +15,13 @@ const { isAdmin = false } = Astro.props;
       <img src="/logo.png" alt="TUKO Logo" width="316" height="100" />
     </a>
     
-    <nav class="nav-menu">
+    <button class="hamburger" id="hamburger">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    
+    <nav class="nav-menu" id="navMenu">
       {isAdmin ? (
         <span class="admin-label">Admin</span>
       ) : (
@@ -52,6 +58,39 @@ const { isAdmin = false } = Astro.props;
         console.error("Error parsing user data:", e);
       }
     }
+  }
+
+  // Hamburger Toggle
+  const hamburger = document.getElementById('hamburger');
+  const navMenu = document.getElementById('navMenu');
+
+  if (hamburger && navMenu) {
+    hamburger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hamburger.classList.toggle('active');
+      navMenu.classList.toggle('active');
+      // Prevent scrolling when menu is open
+      document.body.style.overflow = navMenu.classList.contains('active') ? 'hidden' : 'auto';
+    });
+
+    // Close menu when clicking links
+    const links = navMenu.querySelectorAll('a');
+    links.forEach(link => {
+      link.addEventListener('click', () => {
+        hamburger.classList.remove('active');
+        navMenu.classList.remove('active');
+        document.body.style.overflow = 'auto';
+      });
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', (e) => {
+      if (navMenu.classList.contains('active') && !navMenu.contains(e.target as Node) && !hamburger.contains(e.target as Node)) {
+        hamburger.classList.remove('active');
+        navMenu.classList.remove('active');
+        document.body.style.overflow = 'auto';
+      }
+    });
   }
 
   // Jalankan saat load

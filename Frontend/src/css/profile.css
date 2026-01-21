@@ -98,6 +98,33 @@
   margin-bottom: 40px;
 }
 
+@media (max-width: 768px) {
+  .profile-page-container {
+    padding: 15px;
+  }
+
+  .main-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .form-header {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .avatar-container {
+    margin: 0 auto;
+  }
+
+  .form-card {
+    padding: 20px;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .avatar-section {
   display: flex;
   justify-content: center;
