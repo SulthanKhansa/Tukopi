@@ -21,6 +21,12 @@ router.get("/dashboard/reports", getDashboardReports);
 // Route Create Order
 router.post("/", createOrder);
 
+// Route Update Order
+router.put("/:id", updateOrder);
+
+// Route Delete Order
+router.delete("/:id", deleteOrder);
+
 // Route Detail (Melihat isi kopi apa saja dalam 1 order)
 // Contoh akses: /api/orders/2255
 router.get("/:id", getOrderDetails);

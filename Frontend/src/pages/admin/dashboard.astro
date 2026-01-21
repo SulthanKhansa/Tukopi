@@ -120,9 +120,23 @@ const stats = dashboardData?.stats || { total_customers: 0, total_products: 0, t
         return;
       }
 
-      grid.innerHTML = reports.map((report: any) => {
+      // Fallback titles if API doesn't provide them
+      const fallbackTitles = [
+        "1. Produk yang paling banyak dibeli beserta jumlahnya pada tahun sebelumnya",
+        "2. Siapa saja yang paling banyak melakukan order beserta jumlahnya pada tahun sebelumnya",
+        "3. Siapa saja yang paling besar nilai ordenya beserta nominalnya pada tahun sebelumnya",
+        "4. Siapa saja yang jumlah item produk ordernya paling banyak beserta jumlahnya pada tahun sebelumnya",
+        "5. 10 produk terlaris beserta jumlahnya pada tahun sebelumnya",
+        "6. tampilan profit penjualan bulanan di tahun sebelumnya untuk setiap produk",
+        "7. tampilan jumlah penjualan bulanan di tahun sebelumnya untuk setiap produk",
+        "8. tampilan jumlah order bulanan di tahun sebelumnya untuk setiap customer",
+        "9. tampilan total nominal order bulanan di tahun sebelumnya untuk setiap customer",
+        "10. tampilan jumlah layanan bulanan di tahun sebelumnya untuk setiap kasir"
+      ];
+
+      grid.innerHTML = reports.map((report: any, index: number) => {
         const data = report.data || [];
-        const title = report.title || "Laporan";
+        const title = report.title || fallbackTitles[index] || "Laporan";
         
         // Get headers from first entry
         const headers = data.length > 0 ? Object.keys(data[0]) : [];

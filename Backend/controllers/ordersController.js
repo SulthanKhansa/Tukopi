@@ -8,6 +8,9 @@ export const getOrders = (req, res) => {
             o.ORDER_ID as id, 
             o.ORDER_DATE as tanggal, 
             o.TOTAL as total, 
+            o.CUST_ID as cust_id,
+            o.USER_ID as user_id,
+            o.METHOD_ID as method_id,
             IF(o.CUST_ID = '-NoName-', 'Pelanggan Umum', COALESCE(c.CUST_NAME, o.CUST_ID)) as pelanggan, 
             k.USERNAME as kasir,
             pm.METHOD as metode_pembayaran,
@@ -26,7 +29,36 @@ export const getOrders = (req, res) => {
   });
 };
 
-// 2. Ambil Detail Item per Transaksi (Detail)
+// 2. Update Transaksi
+export const updateOrder = (req, res) => {
+  const { id } = req.params;
+  const { total, methodId, bank, receipt } = req.body;
+
+  const sql = `UPDATE orders SET TOTAL = ?, METHOD_ID = ?, BANK_TRANS = ?, RECEIPT_NUMBER = ? WHERE ORDER_ID = ?`;
+  db.query(sql, [total, methodId, bank, receipt, id], (err, result) => {
+    if (err) return res.status(500).json({ success: false, message: err.message });
+    res.json({ success: true, message: "Transaksi diperbarui" });
+  });
+};
+
+// 3. Delete Transaksi
+export const deleteOrder = (req, res) => {
+  const { id } = req.params;
+
+  // Hapus detail dulu karena ada Foreign Key
+  const deleteDetailsSql = `DELETE FROM order_details WHERE ORDER_ID = ?`;
+  db.query(deleteDetailsSql, [id], (err) => {
+    if (err) return res.status(500).json({ success: false, message: err.message });
+
+    const deleteOrderSql = `DELETE FROM orders WHERE ORDER_ID = ?`;
+    db.query(deleteOrderSql, [id], (err) => {
+      if (err) return res.status(500).json({ success: false, message: err.message });
+      res.json({ success: true, message: "Transaksi dihapus" });
+    });
+  });
+};
+
+// 4. Ambil Detail Item per Transaksi (Detail)
 // Ini dipanggil saat Admin meng-klik salah satu order
 export const getOrderDetails = (req, res) => {
   const { id } = req.params; // Ini adalah ORDER_ID
