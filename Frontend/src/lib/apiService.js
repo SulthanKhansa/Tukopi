@@ -88,7 +88,8 @@ export const apiService = {
       const json = await this.safeFetch(`${getFunctionsUrl()}/orders`);
       return json?.data || [];
     }
-    return (await this.fetchAdmin("/orders")) || [];
+    const res = await this.fetchAdmin("/orders");
+    return res?.data || [];
   },
 
   async getAdminCashiers() {
@@ -96,7 +97,8 @@ export const apiService = {
       const json = await this.safeFetch(`${getFunctionsUrl()}/cashiers`);
       return json?.data || [];
     }
-    return (await this.fetchAdmin("/cashiers")) || [];
+    const res = await this.fetchAdmin("/cashiers");
+    return res?.data || [];
   },
 
   async getAdminCustomers() {
@@ -104,7 +106,8 @@ export const apiService = {
       const json = await this.safeFetch(`${getFunctionsUrl()}/customers`);
       return json?.data || [];
     }
-    return (await this.fetchAdmin("/customers")) || [];
+    const res = await this.fetchAdmin("/customers");
+    return res?.data || [];
   },
 
   async getAdminProducts() {
@@ -112,7 +115,8 @@ export const apiService = {
       const json = await this.safeFetch(`${getFunctionsUrl()}/products`);
       return json?.data || [];
     }
-    return (await this.fetchAdmin("/products")) || [];
+    const res = await this.fetchAdmin("/products");
+    return res?.data || [];
   },
 
   async getProducts() {

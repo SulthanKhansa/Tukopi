@@ -114,14 +114,8 @@ import '../../css/admin.css';
     async function loadTransactions() {
       const tableBody = document.getElementById('table-body');
       try {
-        const res = await apiService.getAdminOrders();
-        // Since getAdminOrders in apiService (non-prod) returns the full response object
-        // if using this.fetchAdmin or just the array if handled differently.
-        // Based on apiService.js: return (await this.fetchAdmin("/orders")) || [];
-        // And fetchAdmin returns safeFetch which returns resp.json() 
-        // Backend returns: { message: "...", data: results }
-        
-        transactions = (res && res.data) ? res.data : [];
+        const data = await apiService.getAdminOrders();
+        transactions = Array.isArray(data) ? data : [];
 
         if (tableBody) {
           if (transactions.length === 0) {
