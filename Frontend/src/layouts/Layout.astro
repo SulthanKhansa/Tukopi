@@ -24,7 +24,7 @@ const { title = 'TUKO - Dulu Minum, Baru Kerja', isAdmin = false } = Astro.props
   <script src="https://unpkg.com/feather-icons"></script>
   <title>{title}</title>
 </head>
-<body>
+<body class="with-header">
   <Header isAdmin={isAdmin} />
   <slot />
   <script is:inline>

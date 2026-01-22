@@ -26,6 +26,16 @@ body {
   width: 100%;
 }
 
+body.with-header {
+  padding-top: 100px;
+}
+
+@media (max-width: 768px) {
+  body.with-header {
+    padding-top: 80px;
+  }
+}
+
 main {
   flex: 1;
   display: flex;
