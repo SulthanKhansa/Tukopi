@@ -159,21 +159,27 @@
   .nav-links-wrapper {
     flex-direction: column;
     gap: 30px;
+    width: 100%;
+    align-items: center;
+    padding-top: 40px;
   }
 
   .nav-links {
     flex-direction: column;
-    gap: 20px;
+    gap: 25px;
     text-align: center;
   }
 
   .nav-link {
     font-size: 24px;
+    display: block;
+    padding: 10px 0;
   }
 
   .profile-section {
     flex-direction: column;
     margin-top: 20px;
+    gap: 15px;
   }
 
   /* Hamburger Animation when Active */

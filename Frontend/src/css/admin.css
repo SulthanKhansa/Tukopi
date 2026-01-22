@@ -35,6 +35,8 @@
 @media (max-width: 768px) {
   .admin-container {
     flex-direction: column;
+    overflow-x: hidden;
+    width: 100%;
   }
 
   .admin-sidebar {
@@ -54,8 +56,10 @@
   }
 
   .admin-main {
-    margin-left: 0;
-    padding: 20px;
+    margin-left: 0 !important;
+    padding: 15px;
+    width: 100%;
+    overflow-x: hidden;
   }
 
   .mobile-admin-toggle {
@@ -78,6 +82,7 @@
 
   .table-container {
     min-width: 800px;
+    width: 100%;
   }
 }
 
@@ -167,6 +172,8 @@
   font-family: "Inclusive Sans", sans-serif;
   margin-left: 280px; /* Memberikan ruang untuk sidebar yang fixed */
   min-height: calc(100vh - 100px);
+  overflow-x: hidden; /* Mencegah konten tabel meluber ke luar halaman */
+  min-width: 0; /* Penting untuk layout flexbox agar anak bisa scroll */
 }
 
 .admin-header {
@@ -252,16 +259,18 @@
 }
 
 .table-scroll-wrapper {
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
   max-height: 600px;
   border-radius: 12px;
   background: #fff;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   border: 1px solid #eee;
+  width: 100%;
 }
 
 .table-container {
-  display: inline-block;
+  display: block;
   min-width: 100%;
   background-color: #fff;
 }
@@ -505,6 +514,7 @@
 
 .report-table-wrapper {
   overflow-y: auto;
+  overflow-x: auto;
   max-height: 480px; /* Sekitar 10 baris data + header */
   border: 1px solid #eee;
   border-radius: 8px;
