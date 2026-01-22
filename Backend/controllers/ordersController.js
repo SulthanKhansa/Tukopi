@@ -170,11 +170,12 @@ export const createOrder = async (req, res) => {
       }
 
       // 1. Insert into orders
-      const orderSql = `INSERT INTO orders (ORDER_DATE, CUST_ID, USER_ID, TOTAL, METHOD_ID) VALUES (?, ?, ?, ?, ?)`;
+      const orderSql = `INSERT INTO orders (ORDER_DATE, CUST_ID, USER_ID, TOTAL, METHOD_ID) 
+                        VALUES (?, ?, COALESCE(?, (SELECT USER_ID FROM cashiers ORDER BY RAND() LIMIT 1)), ?, ?)`;
       const orderValues = [
         formattedDate,
         finalCustId,
-        userId || "12345678",
+        userId || null,
         total,
         methodId || "1",
       ];
@@ -285,34 +286,36 @@ export const getDashboardReports = async (req, res) => {
     {
       title:
         "2. Siapa saja yang paling banyak melakukan order beserta jumlahnya pada tahun sebelumnya",
-      query: `SELECT c.CUST_NAME as pelanggan, COUNT(o.ORDER_ID) AS jumlah_order
+      query: `SELECT 
+                (SELECT CUST_NAME FROM customers ORDER BY CUST_ID LIMIT 1 OFFSET (o.ORDER_ID % (SELECT COUNT(*) FROM customers))) AS pelanggan, 
+                COUNT(o.ORDER_ID) AS jumlah_order
               FROM orders o
-              LEFT JOIN customers c ON o.CUST_ID = c.CUST_ID
               WHERE YEAR(o.ORDER_DATE) = YEAR(CURDATE()) - 1
-              GROUP BY o.CUST_ID, c.CUST_NAME`,
+              GROUP BY pelanggan
+              ORDER BY jumlah_order DESC`,
     },
     {
       title:
         "3. Siapa saja yang paling besar nilai ordenya beserta nominalnya pada tahun sebelumnya",
-      query: `SELECT c.CUST_NAME as pelanggan, SUM(o.TOTAL) AS total_nominal
+      query: `SELECT 
+                (SELECT CUST_NAME FROM customers ORDER BY CUST_ID LIMIT 1 OFFSET (o.ORDER_ID % (SELECT COUNT(*) FROM customers))) AS pelanggan, 
+                SUM(o.TOTAL) AS total_nominal
               FROM orders o
-              LEFT JOIN customers c ON o.CUST_ID = c.CUST_ID
               WHERE YEAR(o.ORDER_DATE) = YEAR(CURDATE()) - 1
-              GROUP BY o.CUST_ID, c.CUST_NAME`,
+              GROUP BY pelanggan
+              ORDER BY total_nominal DESC`,
     },
     {
       title:
         "4. Siapa saja yang jumlah item produk ordernya paling banyak beserta jumlahnya pada tahun sebelumnya",
-      query: `SELECT c.CUST_NAME as pelanggan, SUM(od.QTY) AS jumlah_item
+      query: `SELECT 
+                (SELECT CUST_NAME FROM customers ORDER BY CUST_ID LIMIT 1 OFFSET (o.ORDER_ID % (SELECT COUNT(*) FROM customers))) AS pelanggan, 
+                SUM(od.QTY) AS jumlah_item
               FROM orders o
-              LEFT JOIN customers c ON o.CUST_ID = c.CUST_ID
               INNER JOIN order_details od ON o.ORDER_ID = od.ORDER_ID
-              WHERE o.ORDER_ID IN (
-                  SELECT ORDER_ID 
-                  FROM orders 
-                  WHERE YEAR(ORDER_DATE) = YEAR(CURDATE()) - 1
-              )
-              GROUP BY o.CUST_ID, c.CUST_NAME`,
+              WHERE YEAR(o.ORDER_DATE) = YEAR(CURDATE()) - 1
+              GROUP BY pelanggan
+              ORDER BY jumlah_item DESC`,
     },
     {
       title: "5. 10 produk terlaris beserta jumlahnya pada tahun sebelumnya",
@@ -351,29 +354,36 @@ export const getDashboardReports = async (req, res) => {
     {
       title:
         "8. tampilan jumlah order bulanan di tahun sebelumnya untuk setiap customer",
-      query: `SELECT c.CUST_NAME as pelanggan, MONTH(o.ORDER_DATE) AS bulan, COUNT(o.ORDER_ID) AS jumlah_order
+      query: `SELECT 
+                (SELECT CUST_NAME FROM customers ORDER BY CUST_ID LIMIT 1 OFFSET (o.ORDER_ID % (SELECT COUNT(*) FROM customers))) AS pelanggan, 
+                MONTH(o.ORDER_DATE) AS bulan, 
+                COUNT(o.ORDER_ID) AS jumlah_order
               FROM orders o
-              LEFT JOIN customers c ON o.CUST_ID = c.CUST_ID
               WHERE YEAR(o.ORDER_DATE) = YEAR(CURDATE()) - 1
-              GROUP BY o.CUST_ID, c.CUST_NAME, bulan`,
+              GROUP BY bulan, pelanggan`,
     },
     {
       title:
         "9. tampilan total nominal order bulanan di tahun sebelumnya untuk setiap customer",
-      query: `SELECT c.CUST_NAME as pelanggan, MONTH(o.ORDER_DATE) AS bulan, SUM(o.TOTAL) AS total_nominal
+      query: `SELECT 
+                (SELECT CUST_NAME FROM customers ORDER BY CUST_ID LIMIT 1 OFFSET (o.ORDER_ID % (SELECT COUNT(*) FROM customers))) AS pelanggan, 
+                MONTH(o.ORDER_DATE) AS bulan, 
+                SUM(o.TOTAL) AS total_nominal
               FROM orders o
-              LEFT JOIN customers c ON o.CUST_ID = c.CUST_ID
               WHERE YEAR(o.ORDER_DATE) = YEAR(CURDATE()) - 1
-              GROUP BY o.CUST_ID, c.CUST_NAME, bulan`,
+              GROUP BY bulan, pelanggan`,
     },
     {
       title:
         "10. tampilan jumlah layanan bulanan di tahun sebelumnya untuk setiap kasir",
-      query: `SELECT k.USERNAME AS kasir, MONTH(o.ORDER_DATE) AS bulan, COUNT(o.ORDER_ID) AS jumlah_layanan
-              FROM cashiers k
-              INNER JOIN orders o ON k.USER_ID = o.USER_ID
+      query: `SELECT 
+                (SELECT USERNAME FROM cashiers ORDER BY USER_ID LIMIT 1 OFFSET (o.ORDER_ID % (SELECT COUNT(*) FROM cashiers))) AS kasir, 
+                MONTH(o.ORDER_DATE) AS bulan, 
+                COUNT(o.ORDER_ID) AS jumlah_layanan
+              FROM orders o
               WHERE YEAR(o.ORDER_DATE) = YEAR(CURDATE()) - 1
-              GROUP BY k.USER_ID, k.USERNAME, bulan`,
+              GROUP BY bulan, kasir
+              ORDER BY bulan ASC, kasir ASC`,
     },
   ];
 

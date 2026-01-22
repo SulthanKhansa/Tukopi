@@ -251,9 +251,10 @@ const getProductImage = (name: string) => {
       const methodMap = { 'tunai': '1', 'transfer': '2', 'qris': '3' };
 
       // Pick a random cashier from the loaded list, or fallback to default
-      const randomCashierId = cashiers.length > 0 
-        ? (cashiers[Math.floor(Math.random() * cashiers.length)].USER_ID || cashiers[Math.floor(Math.random() * cashiers.length)].user_id)
-        : '12345678';
+      const randomIdx = Math.floor(Math.random() * cashiers.length);
+      const selectedCashier = cashiers[randomIdx] || { USER_ID: '12345678', USERNAME: 'Sulthan' };
+      const randomCashierId = selectedCashier.USER_ID || selectedCashier.user_id || '12345678';
+      const cashierName = selectedCashier.USERNAME || selectedCashier.username || 'Sulthan';
 
       try {
         const response = await fetch(window.location.hostname !== 'localhost' ? '/.netlify/functions/orders' : 'http://localhost:5000/api/orders', {
@@ -273,8 +274,12 @@ const getProductImage = (name: string) => {
         if (result.success) {
           const receiptModal = document.getElementById('receipt-modal');
           if (receiptModal) {
-            document.getElementById('receipt-info').innerHTML = `<div>ID Order</div><div>:#${result.orderId}</div><div>Tanggal</div><div>:${orderDate}</div>`;
-            document.getElementById('receipt-details').innerHTML = items.map(it => `<div class="receipt-item"><span>${dbProducts[it.productId].name} (${it.qty}x)</span><span>Rp.${(it.price * it.qty).toLocaleString('id-ID')}</span></div>`).join('');
+            document.getElementById('receipt-info').innerHTML = `
+              <div>ID Order</div><div>:#${result.orderId}</div>
+              <div>Tanggal</div><div>:${orderDate}</div>
+              <div>Kasir</div><div>:${cashierName}</div>
+            `;
+            document.getElementById('receipt-details').innerHTML = items.map(it => `<div class="receipt-item"><span>${dbProducts[it.productId].name} (${it.qty}x)</span><span>Rp.${((it.price * it.qty)).toLocaleString('id-ID')}</span></div>`).join('');
             document.getElementById('receipt-total').textContent = `Rp.${totalValue.toLocaleString('id-ID')}`;
             receiptModal.style.display = 'flex';
           }

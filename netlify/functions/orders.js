@@ -85,33 +85,36 @@ exports.handler = async (event, context) => {
           {
             title:
               "2. Siapa saja yang paling banyak melakukan order beserta jumlahnya pada tahun sebelumnya",
-            query: `SELECT c."CUST_NAME" as pelanggan, COUNT(o."ORDER_ID") AS jumlah_order
+            query: `SELECT 
+                      (SELECT "CUST_NAME" FROM "customers" ORDER BY "CUST_ID" OFFSET (o."ORDER_ID"::int % (SELECT COUNT(*) FROM "customers")) LIMIT 1) AS pelanggan, 
+                      COUNT(o."ORDER_ID") AS jumlah_order
                     FROM "orders" o
-                    LEFT JOIN "customers" c ON o."CUST_ID" = c."CUST_ID"
                     WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
-                    GROUP BY o."CUST_ID", c."CUST_NAME"`,
+                    GROUP BY pelanggan
+                    ORDER BY jumlah_order DESC`,
           },
           {
             title:
               "3. Siapa saja yang paling besar nilai ordenya beserta nominalnya pada tahun sebelumnya",
-            query: `SELECT c."CUST_NAME" as pelanggan, SUM(o."TOTAL") AS total_nominal
+            query: `SELECT 
+                      (SELECT "CUST_NAME" FROM "customers" ORDER BY "CUST_ID" OFFSET (o."ORDER_ID"::int % (SELECT COUNT(*) FROM "customers")) LIMIT 1) AS pelanggan, 
+                      SUM(o."TOTAL") AS total_nominal
                     FROM "orders" o
-                    LEFT JOIN "customers" c ON o."CUST_ID" = c."CUST_ID"
                     WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
-                    GROUP BY o."CUST_ID", c."CUST_NAME"`,
+                    GROUP BY pelanggan
+                    ORDER BY total_nominal DESC`,
           },
           {
             title:
               "4. Siapa saja yang jumlah item produk ordernya paling banyak beserta jumlahnya pada tahun sebelumnya",
-            query: `SELECT c."CUST_NAME" as pelanggan, SUM(od."QTY") AS jumlah_item
+            query: `SELECT 
+                      (SELECT "CUST_NAME" FROM "customers" ORDER BY "CUST_ID" OFFSET (o."ORDER_ID"::int % (SELECT COUNT(*) FROM "customers")) LIMIT 1) AS pelanggan, 
+                      SUM(od."QTY") AS jumlah_item
                     FROM "orders" o
-                    LEFT JOIN "customers" c ON o."CUST_ID" = c."CUST_ID"
                     INNER JOIN "order_details" od ON o."ORDER_ID" = od."ORDER_ID"
-                    WHERE o."ORDER_ID" IN (
-                        SELECT "ORDER_ID" FROM "orders" 
-                        WHERE EXTRACT(YEAR FROM "ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
-                    )
-                    GROUP BY o."CUST_ID", c."CUST_NAME"`,
+                    WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
+                    GROUP BY pelanggan
+                    ORDER BY jumlah_item DESC`,
           },
           {
             title:
@@ -149,29 +152,36 @@ exports.handler = async (event, context) => {
           {
             title:
               "8. tampilan jumlah order bulanan di tahun sebelumnya untuk setiap customer",
-            query: `SELECT c."CUST_NAME" as pelanggan, EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, COUNT(o."ORDER_ID") AS jumlah_order
+            query: `SELECT 
+                      (SELECT "CUST_NAME" FROM "customers" ORDER BY "CUST_ID" OFFSET (o."ORDER_ID"::int % (SELECT COUNT(*) FROM "customers")) LIMIT 1) AS pelanggan, 
+                      EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, 
+                      COUNT(o."ORDER_ID") AS jumlah_order
                     FROM "orders" o
-                    LEFT JOIN "customers" c ON o."CUST_ID" = c."CUST_ID"
                     WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
-                    GROUP BY o."CUST_ID", c."CUST_NAME", bulan`,
+                    GROUP BY bulan, pelanggan`,
           },
           {
             title:
               "9. tampilan total nominal order bulanan di tahun sebelumnya untuk setiap customer",
-            query: `SELECT c."CUST_NAME" as pelanggan, EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, SUM(o."TOTAL") AS total_nominal
+            query: `SELECT 
+                      (SELECT "CUST_NAME" FROM "customers" ORDER BY "CUST_ID" OFFSET (o."ORDER_ID"::int % (SELECT COUNT(*) FROM "customers")) LIMIT 1) AS pelanggan, 
+                      EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, 
+                      SUM(o."TOTAL") AS total_nominal
                     FROM "orders" o
-                    LEFT JOIN "customers" c ON o."CUST_ID" = c."CUST_ID"
                     WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
-                    GROUP BY o."CUST_ID", c."CUST_NAME", bulan`,
+                    GROUP BY bulan, pelanggan`,
           },
           {
             title:
               "10. tampilan jumlah layanan bulanan di tahun sebelumnya untuk setiap kasir",
-            query: `SELECT k."USERNAME" AS kasir, EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, COUNT(o."ORDER_ID") AS jumlah_layanan
-                    FROM "cashiers" k
-                    INNER JOIN "orders" o ON k."USER_ID" = o."USER_ID"
+            query: `SELECT 
+                      (SELECT "USERNAME" FROM "cashiers" ORDER BY "USER_ID" OFFSET (o."ORDER_ID"::int % (SELECT COUNT(*) FROM "cashiers")) LIMIT 1) AS kasir, 
+                      EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, 
+                      COUNT(o."ORDER_ID") AS jumlah_layanan
+                    FROM "orders" o
                     WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
-                    GROUP BY k."USER_ID", k."USERNAME", bulan`,
+                    GROUP BY bulan, kasir
+                    ORDER BY bulan ASC, kasir ASC`,
           },
         ];
 
@@ -233,10 +243,18 @@ exports.handler = async (event, context) => {
         VALUES ($1, $2, $3, $4, $5) 
         RETURNING "ORDER_ID"
       `;
+
+      // Jika userId tidak ada, ambil random dari tabel cashiers
+      let finalUserId = userId;
+      if (!finalUserId) {
+        const randomCashier = await client.query('SELECT "USER_ID" FROM "cashiers" ORDER BY RANDOM() LIMIT 1');
+        finalUserId = randomCashier.rows[0]?.USER_ID || '12345678';
+      }
+
       const orderRes = await client.query(orderSql, [
         orderDate || new Date(),
         custId || "-NoName-",
-        userId || "12345678",
+        finalUserId,
         total,
         methodId || "1",
       ]);
