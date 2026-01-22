@@ -289,7 +289,7 @@
   top: 0;
   z-index: 10;
   min-width: 100%;
-  width: max-content;
+  width: 100%;
 }
 
 .transaction-card {
@@ -306,7 +306,7 @@
   margin-bottom: 10px;
   border-radius: 8px;
   min-width: 100%;
-  width: max-content;
+  width: 100%;
 }
 
 .transaction-card:hover {
@@ -455,22 +455,22 @@
 
 /* Specific Table Column Configs */
 .dashboard-grid {
-  grid-template-columns: 80px 150px 180px 150px 140px 180px 120px 150px;
+  grid-template-columns: 80px 150px 1fr 150px 140px 180px 120px 150px;
   min-width: 1150px;
 }
 
 .kasir-grid {
-  grid-template-columns: 80px 150px 180px 250px 150px 150px 150px 200px 120px;
+  grid-template-columns: 80px 150px 180px 1fr 150px 150px 150px 200px 120px;
   min-width: 1430px;
 }
 
 .user-grid {
-  grid-template-columns: 80px 180px 250px 150px 150px 150px 200px 120px;
+  grid-template-columns: 80px 180px 1fr 150px 150px 150px 200px 120px;
   min-width: 1280px;
 }
 
 .product-grid {
-  grid-template-columns: 100px 250px 180px 180px 120px;
+  grid-template-columns: 100px 1fr 180px 180px 120px;
   min-width: 830px;
 }
 
