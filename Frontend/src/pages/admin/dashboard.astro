@@ -171,7 +171,8 @@ const stats = dashboardData?.stats || { total_customers: 0, total_products: 0, t
                       ${headers.map(h => {
                         let val = row[h];
                         const keyLower = h.toLowerCase();
-                        if (keyLower.includes('total') || keyLower.includes('profit') || keyLower.includes('nominal')) {
+                        // Format as currency ONLY for profit or nominal values
+                        if (keyLower.includes('profit') || keyLower.includes('nominal')) {
                           const numVal = Number(val);
                           if (!isNaN(numVal)) {
                              val = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(numVal);

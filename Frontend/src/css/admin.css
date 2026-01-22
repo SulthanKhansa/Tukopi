@@ -456,22 +456,27 @@
 /* Specific Table Column Configs */
 .dashboard-grid {
   grid-template-columns: 80px 150px 180px 150px 140px 180px 120px 150px;
+  min-width: 1150px;
 }
 
 .kasir-grid {
   grid-template-columns: 80px 150px 180px 250px 150px 150px 150px 200px 120px;
+  min-width: 1430px;
 }
 
 .user-grid {
   grid-template-columns: 80px 180px 250px 150px 150px 150px 200px 120px;
+  min-width: 1280px;
 }
 
 .product-grid {
-  grid-template-columns: 100px 1fr 180px 180px 120px;
+  grid-template-columns: 100px 250px 180px 180px 120px;
+  min-width: 830px;
 }
 
 .category-grid {
   grid-template-columns: 180px 1fr;
+  min-width: 500px;
 }
 
 @media (max-width: 1024px) {

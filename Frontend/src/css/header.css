@@ -147,7 +147,8 @@
     height: 100vh;
     background-color: #4a4a4a;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
+    padding-top: 120px;
     align-items: center;
     transition: right 0.3s ease;
     box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);

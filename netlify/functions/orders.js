@@ -73,7 +73,7 @@ exports.handler = async (event, context) => {
           {
             title:
               "1. Produk yang paling banyak dibeli beserta jumlahnya pada tahun sebelumnya",
-            query: `SELECT p."PRODUCT_NAME", SUM(od."QTY") AS total_terjual 
+            query: `SELECT p."PRODUCT_NAME", SUM(od."QTY") AS jumlah_terjual 
                     FROM "products" p 
                     INNER JOIN "order_details" od ON p."PRODUCT_ID" = od."PRODUCT_ID"
                     WHERE od."ORDER_ID" IN (
@@ -85,7 +85,7 @@ exports.handler = async (event, context) => {
           {
             title:
               "2. Siapa saja yang paling banyak melakukan order beserta jumlahnya pada tahun sebelumnya",
-            query: `SELECT c."CUST_NAME" as pelanggan, COUNT(o."ORDER_ID") AS total_order
+            query: `SELECT c."CUST_NAME" as pelanggan, COUNT(o."ORDER_ID") AS jumlah_order
                     FROM "orders" o
                     LEFT JOIN "customers" c ON o."CUST_ID" = c."CUST_ID"
                     WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
@@ -103,7 +103,7 @@ exports.handler = async (event, context) => {
           {
             title:
               "4. Siapa saja yang jumlah item produk ordernya paling banyak beserta jumlahnya pada tahun sebelumnya",
-            query: `SELECT c."CUST_NAME" as pelanggan, SUM(od."QTY") AS total_item
+            query: `SELECT c."CUST_NAME" as pelanggan, SUM(od."QTY") AS jumlah_item
                     FROM "orders" o
                     LEFT JOIN "customers" c ON o."CUST_ID" = c."CUST_ID"
                     INNER JOIN "order_details" od ON o."ORDER_ID" = od."ORDER_ID"
@@ -116,7 +116,7 @@ exports.handler = async (event, context) => {
           {
             title:
               "5. 10 produk terlaris beserta jumlahnya pada tahun sebelumnya",
-            query: `SELECT p."PRODUCT_NAME", SUM(od."QTY") AS total_terjual 
+            query: `SELECT p."PRODUCT_NAME", SUM(od."QTY") AS jumlah_terjual 
                     FROM "products" p 
                     INNER JOIN "order_details" od ON p."PRODUCT_ID" = od."PRODUCT_ID"
                     WHERE od."ORDER_ID" IN (
@@ -124,7 +124,7 @@ exports.handler = async (event, context) => {
                         WHERE EXTRACT(YEAR FROM "ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
                     )
                     GROUP BY p."PRODUCT_ID", p."PRODUCT_NAME"
-                    ORDER BY total_terjual DESC LIMIT 10`,
+                    ORDER BY jumlah_terjual DESC LIMIT 10`,
           },
           {
             title:
