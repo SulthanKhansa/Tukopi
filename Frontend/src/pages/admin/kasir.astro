@@ -142,8 +142,17 @@ const cashiers = await apiService.getAdminCashiers() as any[];
     const sidebar = document.querySelector('.admin-sidebar');
     
     if (sidebarToggle && sidebar) {
-      sidebarToggle.addEventListener('click', () => {
+      sidebarToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
         sidebar.classList.toggle('active');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (sidebar.classList.contains('active') && 
+            !sidebar.contains(e.target as Node) && 
+            !sidebarToggle.contains(e.target as Node)) {
+          sidebar.classList.remove('active');
+        }
       });
     }
 

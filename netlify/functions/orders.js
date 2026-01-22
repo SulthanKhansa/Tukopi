@@ -25,8 +25,12 @@ exports.handler = async (event, context) => {
 
     // GET ALL ORDERS OR STATS OR REPORTS (For Admin)
     if (event.httpMethod === "GET") {
-      const isStats = event.path.endsWith("/stats") || event.queryStringParameters.type === "stats";
-      const isReports = event.path.endsWith("/reports") || event.queryStringParameters.type === "reports";
+      const isStats =
+        event.path.endsWith("/stats") ||
+        event.queryStringParameters.type === "stats";
+      const isReports =
+        event.path.endsWith("/reports") ||
+        event.queryStringParameters.type === "reports";
 
       if (isStats) {
         const statsRes = await client.query(`

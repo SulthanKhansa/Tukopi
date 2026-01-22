@@ -74,7 +74,9 @@ export const apiService = {
 
   async getDashboardReports() {
     if (isProduction) {
-      const json = await this.safeFetch(`${getFunctionsUrl()}/orders?type=reports`);
+      const json = await this.safeFetch(
+        `${getFunctionsUrl()}/orders?type=reports`,
+      );
       return json?.data || [];
     }
     const res = await this.fetchAdmin("/orders/dashboard/reports");
