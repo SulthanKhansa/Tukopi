@@ -25,8 +25,8 @@ exports.handler = async (event, context) => {
 
     // GET ALL ORDERS OR STATS OR REPORTS (For Admin)
     if (event.httpMethod === "GET") {
-      const isStats = event.path.endsWith("/stats");
-      const isReports = event.path.endsWith("/reports");
+      const isStats = event.path.endsWith("/stats") || event.queryStringParameters.type === "stats";
+      const isReports = event.path.endsWith("/reports") || event.queryStringParameters.type === "reports";
 
       if (isStats) {
         const statsRes = await client.query(`
@@ -150,7 +150,7 @@ exports.handler = async (event, context) => {
                         SELECT 
                             EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan,
                             od."PRODUCT_ID",
-                            SUM((od."PRICE" * od."QTY") - (p2."PURCHASE_PRICE" * od."QTY")) AS total_profit
+                            SUM((od."PRICE" * od."QTY")) AS total_profit
                         FROM "order_details" od
                         JOIN "orders" o ON od."ORDER_ID" = o."ORDER_ID"
                         JOIN "products" p2 ON od."PRODUCT_ID" = p2."PRODUCT_ID"
