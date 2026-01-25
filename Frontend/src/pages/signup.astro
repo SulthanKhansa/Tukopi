@@ -54,10 +54,10 @@ import '../css/auth.css';
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      const id = (document.getElementById('idInput') as HTMLInputElement).value;
-      const name = (document.getElementById('nameInput') as HTMLInputElement).value;
-      const email = (document.getElementById('emailInput') as HTMLInputElement).value;
-      const password = (document.getElementById('passwordInput') as HTMLInputElement).value;
+      const id = (document.getElementById('idInput') as HTMLInputElement).value.trim();
+      const name = (document.getElementById('nameInput') as HTMLInputElement).value.trim();
+      const email = (document.getElementById('emailInput') as HTMLInputElement).value.trim();
+      const password = (document.getElementById('passwordInput') as HTMLInputElement).value.trim();
 
       if (errorMsg) errorMsg.style.display = 'none';
       if (successMsg) successMsg.style.display = 'none';

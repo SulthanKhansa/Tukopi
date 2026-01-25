@@ -1,13 +1,16 @@
 import db from "../config/db.js";
 
 export const login = (req, res) => {
-  const { id, password } = req.body;
+  let { id, password } = req.body;
 
   if (!id || !password) {
     return res
       .status(400)
       .json({ success: false, message: "ID dan Password wajib diisi!" });
   }
+
+  id = id.trim();
+  password = password.trim();
 
   // Cek jika login sebagai admin dengan kredensial statis
   if (
@@ -96,13 +99,18 @@ export const login = (req, res) => {
 };
 
 export const register = (req, res) => {
-  const { id, name, email, password } = req.body;
+  let { id, name, email, password } = req.body;
 
   if (!id || !name || !email || !password) {
     return res
       .status(400)
       .json({ success: false, message: "Semua field wajib diisi!" });
   }
+
+  id = id.trim();
+  name = name.trim();
+  email = email.trim();
+  password = password.trim();
 
   // Cek apakah ID sudah ada
   const checkSql = "SELECT * FROM customers WHERE CUST_ID = ?";
