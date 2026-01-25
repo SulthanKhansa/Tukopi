@@ -51,19 +51,19 @@ exports.handler = async (event, context) => {
       }
 
       // 1. Check Cashiers Table (Admin/Staff)
-      // We check by USER_ID (NIM) or USERNAME to be flexible
       const cashierRes = await client.query(
         'SELECT * FROM "cashiers" WHERE UPPER("USER_ID") = UPPER($1) OR UPPER("USERNAME") = UPPER($1)',
         [id]
       );
       if (cashierRes.rows.length > 0) {
         const user = cashierRes.rows[0];
-        // Postgres returns column names exactly as they were created if quoted
-        const dbPassword = user.PASSWORD || user.password;
-        const userId = user.USER_ID || user.user_id;
-        const userName = user.USERNAME || user.username;
+        // Handle all possible casing from Postgres
+        const dbPass = (user.PASSWORD || user.password || "").toString().trim();
+        const inputPass = password.toString().trim();
 
-        if (password === dbPassword || password === "admin") {
+        if (inputPass === dbPass || inputPass === "admin") {
+          const userId = user.USER_ID || user.user_id;
+          const userName = user.USERNAME || user.username;
           return {
             statusCode: 200,
             headers,
@@ -82,13 +82,17 @@ exports.handler = async (event, context) => {
       );
       if (customerRes.rows.length > 0) {
         const user = customerRes.rows[0];
-        // Handle potential case differences in column names from PG
-        const dbPassword = user.PASSWORD || user.password || user.CUST_ID || user.cust_id;
-        const custId = user.CUST_ID || user.cust_id;
-        const custName = user.CUST_NAME || user.cust_name;
-        const email = user.EMAIL || user.email;
+        // Handle all possible casing for values
+        const custId = (user.CUST_ID || user.cust_id || "").toString().trim();
+        const dbPass = (user.PASSWORD || user.password || "").toString().trim();
+        const inputPass = password.toString().trim();
 
-        if (password === dbPassword) {
+        // Fallback to CUST_ID (NIM) if password is empty in DB
+        const finalDbPass = dbPass || custId;
+
+        if (inputPass === finalDbPass) {
+          const custName = user.CUST_NAME || user.cust_name;
+          const email = user.EMAIL || user.email;
           return {
             statusCode: 200,
             headers,
@@ -157,7 +161,7 @@ exports.handler = async (event, context) => {
       }
 
       try {
-        // Try with standard SQL names (Postgres will normalize to lower unless quoted)
+        // Try uppercase PASSWORD column first
         await client.query(
           'INSERT INTO "customers" ("CUST_ID", "CUST_NAME", "EMAIL", "PASSWORD", "ADDRESS", "PLACE_OF_BIRTH", "CONTACT_NUMBER", "GENDER_ID") VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
           [id, name, email, password, "-", "-", "-", "L"],
@@ -165,14 +169,22 @@ exports.handler = async (event, context) => {
         return {
           statusCode: 201,
           headers,
-          body: JSON.stringify({
-            success: true,
-            message: "Pendaftaran berhasil, silakan login",
-          }),
+          body: JSON.stringify({ success: true, message: "Pendaftaran berhasil, silakan login" }),
         };
-      } catch (insertErr) {
-        // Fallback: try without PASSWORD column
+      } catch (errUpper) {
         try {
+          // If uppercase fails, try lowercase password column
+          await client.query(
+            'INSERT INTO "customers" ("CUST_ID", "CUST_NAME", "EMAIL", "password", "ADDRESS", "PLACE_OF_BIRTH", "CONTACT_NUMBER", "GENDER_ID") VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+            [id, name, email, password, "-", "-", "-", "L"],
+          );
+          return {
+            statusCode: 201,
+            headers,
+            body: JSON.stringify({ success: true, message: "Pendaftaran berhasil, silakan login" }),
+          };
+        } catch (errLower) {
+          // Final fallback: insert without password column (will use default NIM on login)
           await client.query(
             'INSERT INTO "customers" ("CUST_ID", "CUST_NAME", "EMAIL", "ADDRESS", "PLACE_OF_BIRTH", "CONTACT_NUMBER", "GENDER_ID") VALUES ($1, $2, $3, $4, $5, $6, $7)',
             [id, name, email, "-", "-", "-", "L"],
@@ -182,11 +194,9 @@ exports.handler = async (event, context) => {
             headers,
             body: JSON.stringify({
               success: true,
-              message: "Pendaftaran berhasil (Password disamakan dengan ID)",
+              message: "Pendaftaran berhasil (Password disamakan dengan NIM)",
             }),
           };
-        } catch (finalErr) {
-          throw finalErr;
         }
       }
     }
