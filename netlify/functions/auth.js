@@ -53,12 +53,12 @@ exports.handler = async (event, context) => {
       // 1. Check Cashiers Table (Admin/Staff)
       // We check by USER_ID (NIM) or USERNAME to be flexible
       const cashierRes = await client.query(
-        'SELECT * FROM cashiers WHERE UPPER(USER_ID) = UPPER($1) OR UPPER(USERNAME) = UPPER($1)',
+        'SELECT * FROM "cashiers" WHERE UPPER("USER_ID") = UPPER($1) OR UPPER("USERNAME") = UPPER($1)',
         [id]
       );
       if (cashierRes.rows.length > 0) {
         const user = cashierRes.rows[0];
-        // Postgres returns column names in lowercase regardless of SQL casing unless quoted
+        // Postgres returns column names exactly as they were created if quoted
         const dbPassword = user.PASSWORD || user.password;
         const userId = user.USER_ID || user.user_id;
         const userName = user.USERNAME || user.username;
@@ -77,7 +77,7 @@ exports.handler = async (event, context) => {
 
       // 2. Check Customers Table (Students)
       const customerRes = await client.query(
-        'SELECT * FROM customers WHERE UPPER(CUST_ID) = UPPER($1)',
+        'SELECT * FROM "customers" WHERE UPPER("CUST_ID") = UPPER($1)',
         [id],
       );
       if (customerRes.rows.length > 0) {
@@ -142,7 +142,7 @@ exports.handler = async (event, context) => {
 
       // Check if user exists (safe SELECT)
       const check = await client.query(
-        'SELECT CUST_ID FROM customers WHERE UPPER(CUST_ID) = UPPER($1)',
+        'SELECT "CUST_ID" FROM "customers" WHERE UPPER("CUST_ID") = UPPER($1)',
         [id],
       );
       if (check.rows.length > 0) {
@@ -159,7 +159,7 @@ exports.handler = async (event, context) => {
       try {
         // Try with standard SQL names (Postgres will normalize to lower unless quoted)
         await client.query(
-          'INSERT INTO customers (CUST_ID, CUST_NAME, EMAIL, PASSWORD, ADDRESS, PLACE_OF_BIRTH, CONTACT_NUMBER, GENDER_ID) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+          'INSERT INTO "customers" ("CUST_ID", "CUST_NAME", "EMAIL", "PASSWORD", "ADDRESS", "PLACE_OF_BIRTH", "CONTACT_NUMBER", "GENDER_ID") VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
           [id, name, email, password, "-", "-", "-", "L"],
         );
         return {
@@ -174,7 +174,7 @@ exports.handler = async (event, context) => {
         // Fallback: try without PASSWORD column
         try {
           await client.query(
-            'INSERT INTO customers (CUST_ID, CUST_NAME, EMAIL, ADDRESS, PLACE_OF_BIRTH, CONTACT_NUMBER, GENDER_ID) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+            'INSERT INTO "customers" ("CUST_ID", "CUST_NAME", "EMAIL", "ADDRESS", "PLACE_OF_BIRTH", "CONTACT_NUMBER", "GENDER_ID") VALUES ($1, $2, $3, $4, $5, $6, $7)',
             [id, name, email, "-", "-", "-", "L"],
           );
           return {
