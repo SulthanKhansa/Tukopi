@@ -117,10 +117,29 @@ exports.handler = async (event, context) => {
         };
       }
 
-      await client.query(
-        'INSERT INTO "customers" ("CUST_ID", "CUST_NAME", "EMAIL", "PASSWORD", "ADDRESS", "PLACE_OF_BIRTH", "CONTACT_NUMBER", "GENDER_ID") VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-        [id, name, email, password, "-", "-", "-", "L"],
-      );
+      try {
+        await client.query(
+          'INSERT INTO "customers" ("CUST_ID", "CUST_NAME", "EMAIL", "PASSWORD", "ADDRESS", "PLACE_OF_BIRTH", "CONTACT_NUMBER", "GENDER_ID") VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+          [id, name, email, password, "-", "-", "-", "L"],
+        );
+      } catch (insertErr) {
+        // Fallback jika kolom PASSWORD belum ada di Postgres
+        if (insertErr.message.includes('column "PASSWORD" does not exist')) {
+          await client.query(
+            'INSERT INTO "customers" ("CUST_ID", "CUST_NAME", "EMAIL", "ADDRESS", "PLACE_OF_BIRTH", "CONTACT_NUMBER", "GENDER_ID") VALUES ($1, $2, $3, $4, $5, $6, $7)',
+            [id, name, email, "-", "-", "-", "L"],
+          );
+          return {
+            statusCode: 201,
+            headers,
+            body: JSON.stringify({
+              success: true,
+              message: "Pendaftaran berhasil (Password disamakan dengan ID)",
+            }),
+          };
+        }
+        throw insertErr; // Lempar error lain
+      }
 
       return {
         statusCode: 201,
