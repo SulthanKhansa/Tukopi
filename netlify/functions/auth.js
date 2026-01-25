@@ -43,19 +43,23 @@ exports.handler = async (event, context) => {
       // 1. Check Cashiers Table (Admin/Staff)
       // We check by USER_ID (NIM) or USERNAME to be flexible
       const cashierRes = await client.query(
-        'SELECT * FROM "cashiers" WHERE "USER_ID" = $1 OR "USERNAME" = $2',
-        [id, id],
+        'SELECT * FROM "cashiers" WHERE UPPER("USER_ID") = UPPER($1) OR UPPER("USERNAME") = UPPER($1)',
+        [id]
       );
       if (cashierRes.rows.length > 0) {
         const user = cashierRes.rows[0];
-        // Allow database password OR "admin" password as requested by user
-        if (password === user.PASSWORD || password === "admin") {
+        // Handle potential case differences in column names from PG
+        const dbPassword = user.PASSWORD || user.password;
+        const userId = user.USER_ID || user.user_id;
+        const userName = user.USERNAME || user.username;
+
+        if (password === dbPassword || password === "admin") {
           return {
             statusCode: 200,
             headers,
             body: JSON.stringify({
               success: true,
-              user: { id: user.USER_ID, name: user.USERNAME, role: "admin" },
+              user: { id: userId, name: userName, role: "admin" },
             }),
           };
         }
@@ -63,13 +67,16 @@ exports.handler = async (event, context) => {
 
       // 2. Check Customers Table (Students)
       const customerRes = await client.query(
-        'SELECT * FROM "customers" WHERE "CUST_ID" = $1',
+        'SELECT * FROM "customers" WHERE UPPER("CUST_ID") = UPPER($1)',
         [id],
       );
       if (customerRes.rows.length > 0) {
         const user = customerRes.rows[0];
-        // Password for student is their CUST_ID (NIM) if not set
-        const dbPassword = user.PASSWORD || user.CUST_ID;
+        // PostgreSQL might return lowercase column names
+        const dbPassword = user.PASSWORD || user.password || user.CUST_ID || user.cust_id;
+        const custId = user.CUST_ID || user.cust_id;
+        const custName = user.CUST_NAME || user.cust_name;
+        const email = user.EMAIL || user.email;
 
         if (password === dbPassword) {
           return {
@@ -78,11 +85,20 @@ exports.handler = async (event, context) => {
             body: JSON.stringify({
               success: true,
               user: {
-                id: user.CUST_ID,
-                name: user.CUST_NAME,
-                email: user.EMAIL,
+                id: custId,
+                name: custName,
+                email: email,
                 role: "customer",
               },
+            }),
+          };
+        } else {
+          return {
+            statusCode: 401,
+            headers,
+            body: JSON.stringify({
+              success: false,
+              message: "Password yang Anda masukkan salah",
             }),
           };
         }
@@ -93,7 +109,7 @@ exports.handler = async (event, context) => {
         headers,
         body: JSON.stringify({
           success: false,
-          message: "ID atau Password salah",
+          message: "ID Mahasiswa atau Username tidak ditemukan",
         }),
       };
     }
@@ -104,7 +120,7 @@ exports.handler = async (event, context) => {
 
       // Check if user exists (safe SELECT)
       const check = await client.query(
-        'SELECT "CUST_ID" FROM "customers" WHERE "CUST_ID" = $1',
+        'SELECT "CUST_ID" FROM "customers" WHERE UPPER("CUST_ID") = UPPER($1)',
         [id],
       );
       if (check.rows.length > 0) {
@@ -119,7 +135,7 @@ exports.handler = async (event, context) => {
       }
 
       try {
-        // Try with PASSWORD column
+        // Try with PASSWORD column (uppercase)
         await client.query(
           'INSERT INTO "customers" ("CUST_ID", "CUST_NAME", "EMAIL", "PASSWORD", "ADDRESS", "PLACE_OF_BIRTH", "CONTACT_NUMBER", "GENDER_ID") VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
           [id, name, email, password, "-", "-", "-", "L"],
@@ -129,26 +145,42 @@ exports.handler = async (event, context) => {
           headers,
           body: JSON.stringify({
             success: true,
-            message: "Pendaftaran berhasil",
+            message: "Pendaftaran berhasil, silakan login",
           }),
         };
       } catch (insertErr) {
-        // Generic fallback - try without PASSWORD column
+        // Try lowercase password column for PostgreSQL
         try {
-          await client.query(
-            'INSERT INTO "customers" ("CUST_ID", "CUST_NAME", "EMAIL", "ADDRESS", "PLACE_OF_BIRTH", "CONTACT_NUMBER", "GENDER_ID") VALUES ($1, $2, $3, $4, $5, $6, $7)',
-            [id, name, email, "-", "-", "-", "L"],
+           await client.query(
+            'INSERT INTO "customers" ("CUST_ID", "CUST_NAME", "EMAIL", "password", "ADDRESS", "PLACE_OF_BIRTH", "CONTACT_NUMBER", "GENDER_ID") VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+            [id, name, email, password, "-", "-", "-", "L"],
           );
           return {
             statusCode: 201,
             headers,
             body: JSON.stringify({
               success: true,
-              message: "Pendaftaran berhasil (Password disamakan dengan ID)",
+              message: "Pendaftaran berhasil, silakan login",
             }),
           };
-        } catch (finalErr) {
-          throw finalErr;
+        } catch (lowercaseErr) {
+          // Generic fallback - try without PASSWORD column
+          try {
+            await client.query(
+              'INSERT INTO "customers" ("CUST_ID", "CUST_NAME", "EMAIL", "ADDRESS", "PLACE_OF_BIRTH", "CONTACT_NUMBER", "GENDER_ID") VALUES ($1, $2, $3, $4, $5, $6, $7)',
+              [id, name, email, "-", "-", "-", "L"],
+            );
+            return {
+              statusCode: 201,
+              headers,
+              body: JSON.stringify({
+                success: true,
+                message: "Pendaftaran berhasil (Password disamakan dengan ID)",
+              }),
+            };
+          } catch (finalErr) {
+            throw finalErr;
+          }
         }
       }
     }
