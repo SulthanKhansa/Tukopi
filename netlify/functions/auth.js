@@ -118,8 +118,8 @@ exports.handler = async (event, context) => {
       }
 
       await client.query(
-        'INSERT INTO "customers" ("CUST_ID", "CUST_NAME", "EMAIL", "PASSWORD") VALUES ($1, $2, $3, $4)',
-        [id, name, email, password],
+        'INSERT INTO "customers" ("CUST_ID", "CUST_NAME", "EMAIL", "PASSWORD", "ADDRESS", "PLACE_OF_BIRTH", "CONTACT_NUMBER", "GENDER_ID") VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+        [id, name, email, password, "-", "-", "-", "L"],
       );
 
       return {

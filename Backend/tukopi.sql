@@ -28,7 +28,7 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `cashiers` (
-  `USER_ID` char(8) NOT NULL,
+  `USER_ID` varchar(20) NOT NULL,
   `USERNAME` varchar(45) NOT NULL,
   `ADDRESS` varchar(100) NOT NULL,
   `PLACE_OF_BIRTH` varchar(25) NOT NULL,
@@ -38,7 +38,7 @@ CREATE TABLE `cashiers` (
   `GENDER_ID` char(1) NOT NULL,
   `CREATED_AT` datetime NOT NULL,
   `UPDATED_AT` datetime NOT NULL,
-  `PASSWORD` varchar(35) NOT NULL
+  `PASSWORD` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
@@ -59,17 +59,18 @@ INSERT INTO `cashiers` (`USER_ID`, `USERNAME`, `ADDRESS`, `PLACE_OF_BIRTH`, `DAT
 --
 
 CREATE TABLE `customers` (
-  `CUST_ID` char(8) NOT NULL,
+  `CUST_ID` varchar(20) NOT NULL,
   `CUST_NAME` varchar(45) NOT NULL,
-  `ADDRESS` varchar(100) NOT NULL,
-  `PLACE_OF_BIRTH` varchar(25) NOT NULL,
+  `ADDRESS` varchar(100) DEFAULT '-',
+  `PLACE_OF_BIRTH` varchar(25) DEFAULT '-',
   `DATE_OF_BIRTH` date DEFAULT NULL,
-  `CONTACT_NUMBER` varchar(14) NOT NULL,
+  `CONTACT_NUMBER` varchar(14) DEFAULT '-',
   `EMAIL` varchar(40) NOT NULL,
-  `GENDER_ID` char(1) NOT NULL,
-  `CREATED_AT` datetime DEFAULT NULL,
-  `CREATED_BY` varchar(35) DEFAULT NULL,
-  `UPDATED_AT` datetime DEFAULT NULL,
+  `PASSWORD` varchar(100) DEFAULT NULL,
+  `GENDER_ID` char(1) DEFAULT 'L',
+  `CREATED_AT` datetime DEFAULT CURRENT_TIMESTAMP,
+  `CREATED_BY` varchar(35) DEFAULT 'SYSTEM',
+  `UPDATED_AT` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `UPDATED_BY` varchar(35) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 

@@ -112,55 +112,21 @@ export const register = (req, res) => {
     if (results.length > 0) {
       return res
         .status(400)
-        .json({ success: false, message: "ID sudah terdaftar!" });
+        .json({ success: false, message: "ID / NIM sudah terdaftar!" });
     }
 
     // Insert ke database
-    // Kita berikan default value untuk field NOT NULL lainnya agar tidak error
     const insertSql = `
       INSERT INTO customers 
       (CUST_ID, CUST_NAME, EMAIL, PASSWORD, ADDRESS, PLACE_OF_BIRTH, CONTACT_NUMBER, GENDER_ID, CREATED_AT, CREATED_BY) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'SYSTEM')
+      VALUES (?, ?, ?, ?, '-', '-', '-', 'L', NOW(), 'SYSTEM')
     `;
 
-    const values = [
-      id,
-      name,
-      email,
-      password,
-      "-", // Address
-      "-", // Place of Birth
-      "-", // Contact Number
-      "L", // Gender Default
-    ];
-
-    db.query(insertSql, values, (err) => {
+    db.query(insertSql, [id, name, email, password], (err) => {
       if (err) {
-        // Jika error karena kolom PASSWORD belum ada, kita coba insert tanpa PASSWORD (fallback)
-        if (err.code === "ER_BAD_FIELD_ERROR") {
-          const fallbackSql = `
-            INSERT INTO customers 
-            (CUST_ID, CUST_NAME, EMAIL, ADDRESS, PLACE_OF_BIRTH, CONTACT_NUMBER, GENDER_ID, CREATED_AT, CREATED_BY) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), 'SYSTEM')
-          `;
-          return db.query(
-            fallbackSql,
-            [id, name, email, "-", "-", "-", "L"],
-            (err2) => {
-              if (err2)
-                return res
-                  .status(500)
-                  .json({ success: false, message: err2.message });
-              res.json({
-                success: true,
-                message: "Registrasi Berhasil! (Password disamakan dengan ID)",
-              });
-            },
-          );
-        }
-        return res.status(500).json({ success: false, message: err.message });
+        return res.status(500).json({ success: false, message: "Registrasi gagal: " + err.message });
       }
-      res.json({ success: true, message: "Registrasi Berhasil!" });
+      res.json({ success: true, message: "Registrasi Berhasil! Silahkan Login." });
     });
   });
 };

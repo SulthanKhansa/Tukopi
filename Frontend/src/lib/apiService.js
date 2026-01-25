@@ -17,14 +17,26 @@ export const apiService = {
     try {
       console.log(`[apiService] Fetching: ${url}`);
       const resp = await fetch(url, options);
+      
+      // Ambil json result dulu
+      let data;
+      try {
+        data = await resp.json();
+      } catch (e) {
+        data = null;
+      }
+
       if (!resp.ok) {
         console.error(`[apiService] HTTP Error ${resp.status} for ${url}`);
-        return null;
+        return { 
+          success: false, 
+          message: data?.message || `HTTP Error ${resp.status}` 
+        };
       }
-      return await resp.json();
+      return data;
     } catch (err) {
       console.error(`[apiService] Fetch failed for ${url}:`, err.message);
-      return null;
+      return { success: false, message: "Koneksi ke server gagal" };
     }
   },
 
@@ -33,24 +45,22 @@ export const apiService = {
     const url = isProduction
       ? `${getFunctionsUrl()}/auth/login`
       : `${API_BASE_URL}/auth/login`;
-    const res = await this.safeFetch(url, {
+    return await this.safeFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, password }),
     });
-    return res || { success: false, error: "Network error" };
   },
 
   async register(id, name, email, password) {
     const url = isProduction
       ? `${getFunctionsUrl()}/auth/register`
       : `${API_BASE_URL}/auth/register`;
-    const res = await this.safeFetch(url, {
+    return await this.safeFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, name, email, password }),
     });
-    return res || { success: false, error: "Network error" };
   },
 
   // Basic Fetcher (Helper for local backend)
