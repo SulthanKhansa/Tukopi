@@ -75,174 +75,193 @@ exports.handler = async (event, context) => {
       if (isReports) {
         const reportConfigs = [
           {
-            title:
-              "1. Produk yang paling banyak dibeli beserta jumlahnya pada tahun sebelumnya",
-            query: `SELECT p."PRODUCT_ID", p."PRODUCT_NAME", penjualan_produk.total_terjual
-                    FROM "products" p
-                    JOIN (
-                        SELECT od."PRODUCT_ID", SUM(od."QTY") AS total_terjual
-                        FROM "order_details" od
-                        JOIN "orders" o ON od."ORDER_ID" = o."ORDER_ID"
-                        WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
-                        GROUP BY od."PRODUCT_ID"
-                    ) AS penjualan_produk ON p."PRODUCT_ID" = penjualan_produk."PRODUCT_ID"
-                    ORDER BY penjualan_produk.total_terjual DESC`,
+            title: "1. Produk Terlaris Tahun Sebelumnya",
+            query: `SELECT * FROM (
+                SELECT 
+                  (SELECT "PRODUCT_NAME" FROM "products" WHERE "PRODUCT_ID" = od."PRODUCT_ID") AS nama_produk, 
+                  SUM("QTY") AS jumlah
+                FROM "order_details" od
+                WHERE (SELECT EXTRACT(YEAR FROM "ORDER_DATE") FROM "orders" WHERE "ORDER_ID" = od."ORDER_ID") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
+                GROUP BY od."PRODUCT_ID"
+            ) AS rekap
+            WHERE jumlah = (
+                SELECT MAX(total_qty) 
+                FROM (
+                    SELECT SUM("QTY") AS total_qty 
+                    FROM "order_details" od2
+                    WHERE (SELECT EXTRACT(YEAR FROM "ORDER_DATE") FROM "orders" WHERE "ORDER_ID" = od2."ORDER_ID") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
+                    GROUP BY od2."PRODUCT_ID"
+                ) AS tabel_bantu
+            )`,
           },
           {
-            title:
-              "2. Siapa saja yang paling banyak melakukan order beserta jumlahnya pada tahun sebelumnya",
-            query: `SELECT c."CUST_ID", c."CUST_NAME", total_transaksi.jumlah_order
+            title: "2. Customer paling banyak order",
+            query: `SELECT c."CUST_NAME", COUNT(o."ORDER_ID") AS total_order
                     FROM "customers" c
-                    JOIN (
-                        SELECT "CUST_ID", COUNT("ORDER_ID") AS jumlah_order
+                    JOIN "orders" o ON c."CUST_ID" = o."CUST_ID"
+                    WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
+                    GROUP BY c."CUST_ID", c."CUST_NAME"
+                    HAVING COUNT(o."ORDER_ID") = (
+                      SELECT MAX(jumlah_order)
+                      FROM (
+                        SELECT COUNT("ORDER_ID") AS jumlah_order
                         FROM "orders"
                         WHERE EXTRACT(YEAR FROM "ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
                         GROUP BY "CUST_ID"
-                    ) AS total_transaksi ON c."CUST_ID" = total_transaksi."CUST_ID"
-                    ORDER BY total_transaksi.jumlah_order DESC`,
+                      ) t
+                    )`,
           },
           {
-            title:
-              "3. Siapa saja yang paling besar nilai ordenya beserta nominalnya pada tahun sebelumnya",
-            query: `SELECT c."CUST_ID", c."CUST_NAME", nominal_order.total_nominal
+            title: "3. Customer nilai order terbesar",
+            query: `SELECT c."CUST_NAME", SUM(od."QTY" * od."PRICE") AS total_nilai_order
                     FROM "customers" c
-                    JOIN (
-                        SELECT "CUST_ID", SUM("TOTAL") AS total_nominal
-                        FROM "orders"
-                        WHERE EXTRACT(YEAR FROM "ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
-                        GROUP BY "CUST_ID"
-                    ) AS nominal_order ON c."CUST_ID" = nominal_order."CUST_ID"
-                    ORDER BY nominal_order.total_nominal DESC`,
+                    JOIN "orders" o ON c."CUST_ID" = o."CUST_ID"
+                    JOIN "order_details" od ON o."ORDER_ID" = od."ORDER_ID"
+                    WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
+                    GROUP BY c."CUST_ID", c."CUST_NAME"
+                    HAVING SUM(od."QTY" * od."PRICE") = (
+                      SELECT MAX(total_nilai)
+                      FROM (
+                        SELECT SUM(od2."QTY" * od2."PRICE") AS total_nilai
+                        FROM "orders" o2
+                        JOIN "order_details" od2 ON o2."ORDER_ID" = od2."ORDER_ID"
+                        WHERE EXTRACT(YEAR FROM o2."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
+                        GROUP BY o2."CUST_ID"
+                      ) t
+                    )`,
           },
           {
-            title:
-              "4. Siapa saja yang jumlah item produk ordernya paling banyak beserta jumlahnya pada tahun sebelumnya",
-            query: `SELECT c."CUST_ID", c."CUST_NAME", belanja_item.total_qty
+            title: "4. Customer jumlah item terbanyak",
+            query: `SELECT c."CUST_NAME", SUM(od."QTY") AS total_item
                     FROM "customers" c
-                    JOIN (
-                        SELECT o."CUST_ID", SUM(od."QTY") AS total_qty
-                        FROM "orders" o
-                        JOIN "order_details" od ON o."ORDER_ID" = od."ORDER_ID"
-                        WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
-                        GROUP BY o."CUST_ID"
-                    ) AS belanja_item ON c."CUST_ID" = belanja_item."CUST_ID"
-                    ORDER BY belanja_item.total_qty DESC`,
+                    JOIN "orders" o ON c."CUST_ID" = o."CUST_ID"
+                    JOIN "order_details" od ON o."ORDER_ID" = od."ORDER_ID"
+                    WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
+                    GROUP BY c."CUST_ID", c."CUST_NAME"
+                    HAVING SUM(od."QTY") = (
+                      SELECT MAX(jumlah_item)
+                      FROM (
+                        SELECT SUM(od2."QTY") AS jumlah_item
+                        FROM "orders" o2
+                        JOIN "order_details" od2 ON o2."ORDER_ID" = od2."ORDER_ID"
+                        WHERE EXTRACT(YEAR FROM o2."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
+                        GROUP BY o2."CUST_ID"
+                      ) t
+                    )`,
           },
           {
-            title:
-              "5. 10 produk terlaris beserta jumlahnya pada tahun sebelumnya",
-            query: `SELECT p."PRODUCT_ID", p."PRODUCT_NAME", penjualan_produk.total_terjual
+            title: "5. 10 produk terlaris",
+            query: `SELECT p."PRODUCT_NAME", SUM(od."QTY") AS total_terjual
                     FROM "products" p
-                    JOIN (
-                        SELECT od."PRODUCT_ID", SUM(od."QTY") AS total_terjual
-                        FROM "order_details" od
-                        JOIN "orders" o ON od."ORDER_ID" = o."ORDER_ID"
-                        WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
-                        GROUP BY od."PRODUCT_ID"
-                    ) AS penjualan_produk ON p."PRODUCT_ID" = penjualan_produk."PRODUCT_ID"
-                    ORDER BY penjualan_produk.total_terjual DESC LIMIT 10`,
+                    JOIN "order_details" od ON p."PRODUCT_ID" = od."PRODUCT_ID"
+                    JOIN "orders" o ON od."ORDER_ID" = o."ORDER_ID"
+                    WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
+                    GROUP BY p."PRODUCT_ID", p."PRODUCT_NAME"
+                    ORDER BY total_terjual DESC
+                    LIMIT 10`,
           },
           {
-            title:
-              "6. tampilan profit penjualan bulanan di tahun sebelumnya untuk setiap produk",
-            query: `SELECT 
-                      laporan_profit.bulan,
-                      p."PRODUCT_NAME",
-                      laporan_profit.total_profit
+            title: "6. Profit bulanan per produk",
+            query: `SELECT p."PRODUCT_NAME",
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=1 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Januari,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=2 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Februari,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=3 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Maret,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=4 THEN od."QTY"*od."PRICE" ELSE 0 END) AS April,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=5 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Mei,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=6 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Juni,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=7 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Juli,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=8 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Agustus,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=9 THEN od."QTY"*od."PRICE" ELSE 0 END) AS September,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=10 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Oktober,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=11 THEN od."QTY"*od."PRICE" ELSE 0 END) AS November,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=12 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Desember
                     FROM "products" p
-                    JOIN (
-                        SELECT 
-                            EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan,
-                            od."PRODUCT_ID",
-                            SUM((od."PRICE" * od."QTY")) AS total_profit
-                        FROM "order_details" od
-                        JOIN "orders" o ON od."ORDER_ID" = o."ORDER_ID"
-                        JOIN "products" p2 ON od."PRODUCT_ID" = p2."PRODUCT_ID"
-                        WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
-                        GROUP BY bulan, od."PRODUCT_ID"
-                    ) AS laporan_profit ON p."PRODUCT_ID" = laporan_profit."PRODUCT_ID"
-                    ORDER BY laporan_profit.bulan ASC, laporan_profit.total_profit DESC`,
+                    JOIN "order_details" od ON p."PRODUCT_ID" = od."PRODUCT_ID"
+                    JOIN "orders" o ON od."ORDER_ID" = o."ORDER_ID"
+                    WHERE EXTRACT(YEAR FROM o."ORDER_DATE")=EXTRACT(YEAR FROM CURRENT_DATE)-1
+                    GROUP BY p."PRODUCT_ID", p."PRODUCT_NAME"`,
           },
           {
-            title:
-              "7. tampilan jumlah penjualan bulanan di tahun sebelumnya untuk setiap produk",
-            query: `SELECT 
-                      p."PRODUCT_ID", 
-                      p."PRODUCT_NAME", 
-                      penjualan_bulanan.bulan, 
-                      penjualan_bulanan.total_qty
+            title: "7. Jumlah penjualan bulanan per produk",
+            query: `SELECT p."PRODUCT_NAME",
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=1 THEN od."QTY" ELSE 0 END) AS Januari,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=2 THEN od."QTY" ELSE 0 END) AS Februari,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=3 THEN od."QTY" ELSE 0 END) AS Maret,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=4 THEN od."QTY" ELSE 0 END) AS April,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=5 THEN od."QTY" ELSE 0 END) AS Mei,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=6 THEN od."QTY" ELSE 0 END) AS Juni,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=7 THEN od."QTY" ELSE 0 END) AS Juli,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=8 THEN od."QTY" ELSE 0 END) AS Agustus,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=9 THEN od."QTY" ELSE 0 END) AS September,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=10 THEN od."QTY" ELSE 0 END) AS Oktober,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=11 THEN od."QTY" ELSE 0 END) AS November,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=12 THEN od."QTY" ELSE 0 END) AS Desember
                     FROM "products" p
-                    JOIN (
-                        SELECT 
-                            od."PRODUCT_ID", 
-                            EXTRACT(MONTH FROM o."ORDER_DATE") AS bulan, 
-                            SUM(od."QTY") AS total_qty
-                        FROM "order_details" od
-                        JOIN "orders" o ON od."ORDER_ID" = o."ORDER_ID"
-                        WHERE EXTRACT(YEAR FROM o."ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
-                        GROUP BY od."PRODUCT_ID", bulan
-                    ) AS penjualan_bulanan ON p."PRODUCT_ID" = penjualan_bulanan."PRODUCT_ID"
-                    ORDER BY penjualan_bulanan.bulan ASC, penjualan_bulanan.total_qty DESC`,
+                    JOIN "order_details" od ON p."PRODUCT_ID" = od."PRODUCT_ID"
+                    JOIN "orders" o ON od."ORDER_ID" = o."ORDER_ID"
+                    WHERE EXTRACT(YEAR FROM o."ORDER_DATE")=EXTRACT(YEAR FROM CURRENT_DATE)-1
+                    GROUP BY p."PRODUCT_ID", p."PRODUCT_NAME"`,
           },
           {
-            title:
-              "8. tampilan jumlah order bulanan di tahun sebelumnya untuk setiap customer",
-            query: `SELECT 
-                      c."CUST_ID", 
-                      c."CUST_NAME", 
-                      order_bulanan.bulan, 
-                      order_bulanan.jumlah_transaksi
+            title: "8. Order bulanan per customer",
+            query: `SELECT c."CUST_NAME",
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=1 THEN 1 ELSE 0 END) AS Januari,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=2 THEN 1 ELSE 0 END) AS Februari,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=3 THEN 1 ELSE 0 END) AS Maret,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=4 THEN 1 ELSE 0 END) AS April,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=5 THEN 1 ELSE 0 END) AS Mei,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=6 THEN 1 ELSE 0 END) AS Juni,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=7 THEN 1 ELSE 0 END) AS Juli,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=8 THEN 1 ELSE 0 END) AS Agustus,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=9 THEN 1 ELSE 0 END) AS September,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=10 THEN 1 ELSE 0 END) AS Oktober,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=11 THEN 1 ELSE 0 END) AS November,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=12 THEN 1 ELSE 0 END) AS Desember
                     FROM "customers" c
-                    JOIN (
-                        SELECT 
-                            "CUST_ID", 
-                            EXTRACT(MONTH FROM "ORDER_DATE") AS bulan, 
-                            COUNT("ORDER_ID") AS jumlah_transaksi
-                        FROM "orders"
-                        WHERE EXTRACT(YEAR FROM "ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
-                        GROUP BY "CUST_ID", bulan
-                    ) AS order_bulanan ON c."CUST_ID" = order_bulanan."CUST_ID"
-                    ORDER BY order_bulanan.bulan ASC, order_bulanan.jumlah_transaksi DESC`,
+                    LEFT JOIN "orders" o ON c."CUST_ID" = o."CUST_ID"
+                    AND EXTRACT(YEAR FROM o."ORDER_DATE")=EXTRACT(YEAR FROM CURRENT_DATE)-1
+                    GROUP BY c."CUST_ID", c."CUST_NAME"`,
           },
           {
-            title:
-              "9. tampilan total nominal order bulanan di tahun sebelumnya untuk setiap customer",
-            query: `SELECT 
-                      c."CUST_ID", 
-                      c."CUST_NAME", 
-                      nominal_bulanan.bulan, 
-                      nominal_bulanan.total_pembayaran
+            title: "9. Nominal order bulanan per customer",
+            query: `SELECT c."CUST_NAME",
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=1 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Januari,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=2 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Februari,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=3 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Maret,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=4 THEN od."QTY"*od."PRICE" ELSE 0 END) AS April,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=5 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Mei,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=6 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Juni,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=7 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Juli,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=8 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Agustus,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=9 THEN od."QTY"*od."PRICE" ELSE 0 END) AS September,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=10 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Oktober,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=11 THEN od."QTY"*od."PRICE" ELSE 0 END) AS November,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=12 THEN od."QTY"*od."PRICE" ELSE 0 END) AS Desember
                     FROM "customers" c
-                    JOIN (
-                        SELECT 
-                            "CUST_ID", 
-                            EXTRACT(MONTH FROM "ORDER_DATE") AS bulan, 
-                            SUM("TOTAL") AS total_pembayaran
-                        FROM "orders"
-                        WHERE EXTRACT(YEAR FROM "ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
-                        GROUP BY "CUST_ID", bulan
-                    ) AS nominal_bulanan ON c."CUST_ID" = nominal_bulanan."CUST_ID"
-                    ORDER BY nominal_bulanan.bulan ASC, nominal_bulanan.total_pembayaran DESC`,
+                    JOIN "orders" o ON c."CUST_ID" = o."CUST_ID"
+                    JOIN "order_details" od ON o."ORDER_ID" = od."ORDER_ID"
+                    WHERE EXTRACT(YEAR FROM o."ORDER_DATE")=EXTRACT(YEAR FROM CURRENT_DATE)-1
+                    GROUP BY c."CUST_ID", c."CUST_NAME"`,
           },
           {
-            title:
-              "10. tampilan jumlah layanan bulanan di tahun sebelumnya untuk setiap kasir",
-            query: `SELECT 
-                      cs."USER_ID", 
-                      cs."USERNAME" AS nama_kasir, 
-                      layanan_bulanan.bulan, 
-                      layanan_bulanan.total_layanan
-                    FROM "cashiers" cs
-                    JOIN (
-                        SELECT 
-                            "USER_ID", 
-                            EXTRACT(MONTH FROM "ORDER_DATE") AS bulan, 
-                            COUNT("ORDER_ID") AS total_layanan
-                        FROM "orders"
-                        WHERE EXTRACT(YEAR FROM "ORDER_DATE") = EXTRACT(YEAR FROM CURRENT_DATE) - 1
-                        GROUP BY "USER_ID", bulan
-                    ) AS layanan_bulanan ON cs."USER_ID" = layanan_bulanan."USER_ID"
-                    ORDER BY layanan_bulanan.bulan ASC, layanan_bulanan.total_layanan DESC`,
+            title: "10. Layanan bulanan per kasir",
+            query: `SELECT c."EMAIL",
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=1 THEN 1 ELSE 0 END) AS Januari,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=2 THEN 1 ELSE 0 END) AS Februari,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=3 THEN 1 ELSE 0 END) AS Maret,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=4 THEN 1 ELSE 0 END) AS April,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=5 THEN 1 ELSE 0 END) AS Mei,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=6 THEN 1 ELSE 0 END) AS Juni,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=7 THEN 1 ELSE 0 END) AS Juli,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=8 THEN 1 ELSE 0 END) AS Agustus,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=9 THEN 1 ELSE 0 END) AS September,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=10 THEN 1 ELSE 0 END) AS Oktober,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=11 THEN 1 ELSE 0 END) AS November,
+                      SUM(CASE WHEN EXTRACT(MONTH FROM o."ORDER_DATE")=12 THEN 1 ELSE 0 END) AS Desember
+                    FROM "cashiers" c
+                    JOIN "orders" o ON c."USER_ID" = o."USER_ID"
+                    WHERE EXTRACT(YEAR FROM o."ORDER_DATE")=EXTRACT(YEAR FROM CURRENT_DATE)-1
+                    GROUP BY c."USER_ID", c."EMAIL"`,
           },
         ];
 
