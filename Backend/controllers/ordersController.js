@@ -416,7 +416,7 @@ export const getDashboardReports = async (req, res) => {
               FROM customers c
               LEFT JOIN orders o ON c.cust_id=o.cust_id
               AND YEAR(o.order_date)=YEAR(CURDATE())-1
-              GROUP BY c.cust_id, c.cust_name`,
+              GROUP BY c.cust_id, c.cust_name ASC`,
     },
     {
       title: "9. Nominal order bulanan per customer",
